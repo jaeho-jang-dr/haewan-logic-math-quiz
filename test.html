@@ -4,17 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>테스트 - 논리수학 퀴즈</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
-        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
-        .pass { background-color: #d4edda; }
-        .fail { background-color: #f8d7da; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .pass { background-color: #d4edda; border-color: #c3e6cb; }
+        .fail { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        h1 { color: #333; }
+        .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     <h1>🧪 시스템 테스트</h1>
     
-    <div id="test-results"></div>
+    <div id="test-results">
+        <div class="test loading">
+            <strong>테스트 실행 중...</strong><br>
+            <span class="spinner"></span> 잠시만 기다려주세요...
+        </div>
+    </div>
     
     <script src="js/database.js"></script>
     <script src="data/questions.js"></script>
@@ -24,16 +35,48 @@
         async function runTests() {
             const results = [];
             
-            // 테스트 1: 데이터베이스 초기화
+            // 테스트 0: 기본 환경 체크
+            try {
+                if (typeof console === 'undefined' || typeof window === 'undefined') {
+                    throw new Error('브라우저 환경이 아닙니다');
+                }
+                results.push({ name: "기본 환경", status: "pass", message: "✅ 브라우저 환경 정상" });
+            } catch (error) {
+                results.push({ name: "기본 환경", status: "fail", message: "❌ " + error.message });
+            }
+            
+            // 테스트 1: 필수 스크립트 로딩 확인
+            try {
+                const checks = {
+                    database: typeof MathQuizDatabase !== 'undefined',
+                    questions: typeof questionsData !== 'undefined',
+                    additionalQuestions: typeof mergeAdditionalQuestions !== 'undefined'
+                };
+                
+                const allLoaded = Object.values(checks).every(Boolean);
+                if (allLoaded) {
+                    results.push({ name: "스크립트 로딩", status: "pass", message: "✅ 모든 스크립트 정상 로드됨" });
+                } else {
+                    results.push({ 
+                        name: "스크립트 로딩", 
+                        status: "fail", 
+                        message: `❌ 일부 스크립트 로드 실패: ${JSON.stringify(checks)}` 
+                    });
+                }
+            } catch (error) {
+                results.push({ name: "스크립트 로딩", status: "fail", message: "❌ " + error.message });
+            }
+            
+            // 테스트 2: 데이터베이스 초기화
             try {
                 const db = new MathQuizDatabase();
-                await new Promise(resolve => setTimeout(resolve, 500));
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 results.push({ name: "데이터베이스 초기화", status: "pass", message: "✅ IndexedDB 정상 작동" });
             } catch (error) {
                 results.push({ name: "데이터베이스 초기화", status: "fail", message: "❌ " + error.message });
             }
             
-            // 테스트 2: 문제 데이터 확인
+            // 테스트 3: 문제 데이터 확인
             try {
                 const easyCount = questionsData.easy.length;
                 const mediumCount = questionsData.medium.length;
@@ -41,22 +84,22 @@
                 
                 if (easyCount >= 5 && mediumCount >= 5 && hardCount >= 5) {
                     results.push({ 
-                        name: "문제 데이터 로딩", 
+                        name: "문제 데이터", 
                         status: "pass", 
                         message: `✅ 쉬움: ${easyCount}개, 보통: ${mediumCount}개, 어려움: ${hardCount}개` 
                     });
                 } else {
                     results.push({ 
-                        name: "문제 데이터 로딩", 
+                        name: "문제 데이터", 
                         status: "fail", 
                         message: "❌ 문제 데이터 부족" 
                     });
                 }
             } catch (error) {
-                results.push({ name: "문제 데이터 로딩", status: "fail", message: "❌ " + error.message });
+                results.push({ name: "문제 데이터", status: "fail", message: "❌ " + error.message });
             }
             
-            // 테스트 3: React 라이브러리 확인
+            // 테스트 4: React 라이브러리 확인
             try {
                 if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
                     results.push({ name: "React 라이브러리", status: "pass", message: "✅ React 정상 로드됨" });
@@ -67,7 +110,7 @@
                 results.push({ name: "React 라이브러리", status: "fail", message: "❌ " + error.message });
             }
             
-            // 테스트 4: 브라우저 호환성 확인
+            // 테스트 5: 브라우저 호환성 확인
             try {
                 const features = {
                     indexedDB: 'indexedDB' in window,
