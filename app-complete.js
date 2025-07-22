@@ -194,7 +194,20 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                     React.createElement('p', {
                         key: 'info-text',
                         className: "text-sm text-green-700"
-                    }, '한 번에 3문제씩 풀어보세요! 각 문제마다 3단계로 단계별 학습이 진행됩니다. ✨')
+                    }, '한 번에 3문제씩 풀어보세요! 각 문제마다 3단계로 단계별 학습이 진행됩니다. ✨'),
+                    React.createElement('button', {
+                        key: 'reset-button',
+                        onClick: () => {
+                            if (confirm('🔄 새로운 문제로 업데이트하시겠습니까?\\n\\n기존의 잘못된 문제들을 정리하고 새로운 올바른 문제들로 교체합니다.')) {
+                                localStorage.clear();
+                                sessionStorage.clear();
+                                indexedDB.deleteDatabase('mathQuizDB');
+                                alert('✅ 데이터가 초기화되었습니다! 페이지를 새로고침합니다.');
+                                window.location.reload();
+                            }
+                        },
+                        className: "mt-3 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors"
+                    }, '🔄 문제 업데이트')
                 ])
             ]),
 

@@ -388,6 +388,34 @@ function generateRemainingMediumQuestions() {
         });
     }
     
+    // 마지막에 올바른 트랙 달리기 문제 추가 (기존 문제 교체용)
+    additionalQuestions.push({
+        id: 199,
+        question: "🏃‍♀️ 혜완이가 200m 트랙을 2바퀴 뛰고, 100m 더 뛰었어요. 총 몇 m를 뛰었을까요?",
+        steps: [
+            {
+                question: "200m 트랙을 2바퀴 뛰면 몇 m인가요?",
+                options: ["300m", "400m", "500m", "600m"],
+                correct: 1,
+                explanation: "200m × 2바퀴 = 400m이에요!"
+            },
+            {
+                question: "400m에 100m를 더하면 몇 m인가요?",
+                options: ["400m", "450m", "500m", "550m"],
+                correct: 2,
+                explanation: "400m + 100m = 500m이에요!"
+            },
+            {
+                question: "혜완이가 총 뛴 거리는?",
+                options: ["450m", "500m", "550m", "600m"],
+                correct: 1,
+                explanation: "트랙 2바퀴(400m) + 추가 100m = 500m를 뛰었어요! 🎉"
+            }
+        ],
+        category: "거리계산",
+        difficulty: "medium"
+    });
+
     return additionalQuestions;
 }
 
