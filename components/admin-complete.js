@@ -17,6 +17,27 @@ function CompleteAdminPage({ database, onReturnHome }) {
         try {
             setLoading(true);
             
+            // 문제 데이터가 완전히 로드될 때까지 기다리기 (최대 3초)
+            let attempts = 0;
+            const maxAttempts = 30; // 3초 (100ms × 30)
+            
+            while (attempts < maxAttempts) {
+                if (typeof easyQuestions !== 'undefined' && 
+                    typeof mediumQuestions !== 'undefined' && 
+                    typeof hardQuestions !== 'undefined' &&
+                    easyQuestions.length > 0 && 
+                    mediumQuestions.length > 0 && 
+                    hardQuestions.length > 0) {
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (attempts >= maxAttempts) {
+                console.warn('문제 데이터 로딩 시간 초과. 현재 사용 가능한 데이터로 진행합니다.');
+            }
+            
             // 리더보드 시스템 초기화
             const leaderboardSystem = new LeaderboardSystem();
             setLeaderboard(leaderboardSystem);
@@ -60,15 +81,43 @@ function CompleteAdminPage({ database, onReturnHome }) {
                 setAppliances(appliancesData);
             }
             
-            // 문제 데이터 통계
+            // 문제 데이터 통계 - 정확한 개수 계산
             let totalQuestions = 0;
-            if (typeof easyQuestions !== 'undefined') totalQuestions += easyQuestions.length;
-            if (typeof mediumQuestions !== 'undefined') totalQuestions += mediumQuestions.length;
-            if (typeof hardQuestions !== 'undefined') totalQuestions += hardQuestions.length;
+            let easyCount = 0, mediumCount = 0, hardCount = 0;
+            
+            // 각 난이도별로 50개씩 있어야 함
+            if (typeof easyQuestions !== 'undefined' && easyQuestions.length > 0) {
+                easyCount = easyQuestions.length;
+                totalQuestions += easyCount;
+                console.log(`쉬움 문제: ${easyCount}개`);
+            } else {
+                console.warn('easyQuestions가 로드되지 않았습니다.');
+            }
+            
+            if (typeof mediumQuestions !== 'undefined' && mediumQuestions.length > 0) {
+                mediumCount = mediumQuestions.length;
+                totalQuestions += mediumCount;
+                console.log(`보통 문제: ${mediumCount}개`);
+            } else {
+                console.warn('mediumQuestions가 로드되지 않았습니다.');
+            }
+            
+            if (typeof hardQuestions !== 'undefined' && hardQuestions.length > 0) {
+                hardCount = hardQuestions.length;
+                totalQuestions += hardCount;
+                console.log(`어려움 문제: ${hardCount}개`);
+            } else {
+                console.warn('hardQuestions가 로드되지 않았습니다.');
+            }
+            
+            console.log(`총 문제 개수: ${totalQuestions}개`);
             
             setStats(prevStats => ({
                 ...prevStats,
-                totalQuestions: totalQuestions
+                totalQuestions: totalQuestions,
+                easyQuestionsCount: easyCount,
+                mediumQuestionsCount: mediumCount,
+                hardQuestionsCount: hardCount
             }));
             
         } catch (error) {
@@ -255,7 +304,7 @@ function CompleteAdminPage({ database, onReturnHome }) {
                             React.createElement('span', {
                                 key: 'count',
                                 className: 'font-bold'
-                            }, `${typeof easyQuestions !== 'undefined' ? easyQuestions.length : 0}개`)
+                            }, `${stats.easyQuestionsCount || 0}개`)
                         ]),
                         React.createElement('div', {
                             key: 'medium',
@@ -268,7 +317,7 @@ function CompleteAdminPage({ database, onReturnHome }) {
                             React.createElement('span', {
                                 key: 'count',
                                 className: 'font-bold'
-                            }, `${typeof mediumQuestions !== 'undefined' ? mediumQuestions.length : 0}개`)
+                            }, `${stats.mediumQuestionsCount || 0}개`)
                         ]),
                         React.createElement('div', {
                             key: 'hard',
@@ -281,7 +330,7 @@ function CompleteAdminPage({ database, onReturnHome }) {
                             React.createElement('span', {
                                 key: 'count',
                                 className: 'font-bold'
-                            }, `${typeof hardQuestions !== 'undefined' ? hardQuestions.length : 0}개`)
+                            }, `${stats.hardQuestionsCount || 0}개`)
                         ])
                     ])
                 ]),
