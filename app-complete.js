@@ -809,6 +809,7 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
                 ])
             ])
         ])
+        ])
     ]);
 }
 
