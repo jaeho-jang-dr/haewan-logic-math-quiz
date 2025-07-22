@@ -194,20 +194,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                     React.createElement('p', {
                         key: 'info-text',
                         className: "text-sm text-green-700"
-                    }, '한 번에 3문제씩 풀어보세요! 각 문제마다 3단계로 단계별 학습이 진행됩니다. ✨'),
-                    React.createElement('button', {
-                        key: 'reset-button',
-                        onClick: () => {
-                            if (confirm('🔄 새로운 문제로 업데이트하시겠습니까?\\n\\n기존의 잘못된 문제들을 정리하고 새로운 올바른 문제들로 교체합니다.')) {
-                                localStorage.clear();
-                                sessionStorage.clear();
-                                indexedDB.deleteDatabase('mathQuizDB');
-                                alert('✅ 데이터가 초기화되었습니다! 페이지를 새로고침합니다.');
-                                window.location.reload();
-                            }
-                        },
-                        className: "mt-3 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm rounded-lg transition-colors"
-                    }, '🔄 문제 업데이트')
+                    }, '한 번에 3문제씩 풀어보세요! 각 문제마다 3단계로 단계별 학습이 진행됩니다. ✨')
                 ])
             ]),
 
@@ -533,7 +520,7 @@ function ResultPage({ score, totalQuestions, answers, onReturnHome, onViewScoreb
 }
 
 // 개선된 게임 페이지 컴포넌트 (기존과 동일하지만 향상된 UI)
-function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, onSubmitAnswer, onQuit }) {
+function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, onSubmitAnswer, onQuit, onSkipQuestion, skipUsed }) {
     const [selectedAnswer, setSelectedAnswer] = useState(null);
     const [showExplanation, setShowExplanation] = useState(false);
     const [answered, setAnswered] = useState(false);
@@ -629,6 +616,11 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
                         }, `${score}점`)
                     ])
                 ]),
+                !skipUsed && React.createElement('button', {
+                    key: 'skip-button',
+                    onClick: onSkipQuestion,
+                    className: "bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg transition-colors font-semibold text-sm"
+                }, '🔄 다른 문제로'),
                 React.createElement('button', {
                     key: 'quit-button',
                     onClick: onQuit,
@@ -823,6 +815,7 @@ function App() {
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [score, setScore] = useState(0);
     const [answers, setAnswers] = useState([]);
+    const [skipUsed, setSkipUsed] = useState(false); // 문제 건너뛰기 사용 여부
     
     useEffect(() => {
         initializeApp();
@@ -909,6 +902,7 @@ function App() {
             setCurrentStepIndex(0);
             setScore(0);
             setAnswers([]);
+            setSkipUsed(false); // 건너뛰기 초기화
             setCurrentPage('game');
             
             console.log('게임 시작 완료');
@@ -979,6 +973,71 @@ function App() {
         endGame();
     };
 
+    const skipQuestion = async () => {
+        if (skipUsed) {
+            alert('❌ 문제 건너뛰기는 한 게임에 한 번만 사용할 수 있어요!');
+            return;
+        }
+
+        if (!confirm('🔄 이 문제를 건너뛰고 다른 문제를 가져올까요?\n\n한 게임에 한 번만 사용할 수 있습니다.')) {
+            return;
+        }
+
+        try {
+            // 현재 게임세션의 난이도로 새로운 문제 1개 가져오기
+            let newQuestion = null;
+            if (database && gameSession) {
+                const newQuestions = await database.getQuestionsByDifficulty(gameSession.difficulty, 1);
+                if (newQuestions.length > 0) {
+                    // 현재 문제와 다른 문제인지 확인
+                    const currentQuestionId = questions[currentQuestionIndex].id;
+                    newQuestion = newQuestions.find(q => q.id !== currentQuestionId) || newQuestions[0];
+                }
+            }
+            
+            // 데이터베이스에서 가져올 수 없으면 메모리에서 가져오기
+            if (!newQuestion) {
+                let questionSource = [];
+                switch(gameSession.difficulty) {
+                    case 'easy':
+                        questionSource = typeof easyQuestions !== 'undefined' ? easyQuestions : [];
+                        break;
+                    case 'medium':
+                        questionSource = typeof mediumQuestions !== 'undefined' ? mediumQuestions : [];
+                        break;
+                    case 'hard':
+                        questionSource = typeof hardQuestions !== 'undefined' ? hardQuestions : [];
+                        break;
+                }
+                
+                if (questionSource.length > 0) {
+                    // 현재 문제와 다른 문제 선택
+                    const currentQuestionId = questions[currentQuestionIndex].id;
+                    const availableQuestions = questionSource.filter(q => q.id !== currentQuestionId);
+                    if (availableQuestions.length > 0) {
+                        newQuestion = availableQuestions[Math.floor(Math.random() * availableQuestions.length)];
+                    }
+                }
+            }
+
+            if (newQuestion) {
+                // 현재 문제를 새 문제로 교체
+                const updatedQuestions = [...questions];
+                updatedQuestions[currentQuestionIndex] = newQuestion;
+                setQuestions(updatedQuestions);
+                setCurrentStepIndex(0); // 첫 번째 단계로 초기화
+                setSkipUsed(true); // 건너뛰기 사용 표시
+                
+                alert('✅ 새로운 문제로 바뀌었습니다!');
+            } else {
+                alert('❌ 새로운 문제를 가져올 수 없습니다. 현재 문제를 계속 풀어주세요.');
+            }
+        } catch (error) {
+            console.error('문제 건너뛰기 중 오류:', error);
+            alert('❌ 문제 건너뛰기 중 오류가 발생했습니다.');
+        }
+    };
+
     // 페이지별 컴포넌트 렌더링
     const renderPage = () => {
         switch(currentPage) {
@@ -996,7 +1055,9 @@ function App() {
                     totalQuestions: questions.length,
                     score: score,
                     onSubmitAnswer: submitAnswer,
-                    onQuit: quitGame
+                    onQuit: quitGame,
+                    onSkipQuestion: skipQuestion,
+                    skipUsed: skipUsed
                 });
             case 'result':
                 return React.createElement(ResultPage, {
