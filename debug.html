@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디버그 - 혜완이의 논리수학 퀴즈</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .debug-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        .debug-item {
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid #333;
+            border-radius: 3px;
+        }
+        .error { border-color: #ff4444; background: rgba(255,68,68,0.1); }
+        .success { border-color: #44ff44; background: rgba(68,255,68,0.1); }
+        .warning { border-color: #ffaa00; background: rgba(255,170,0,0.1); }
+        .main-content { margin-right: 320px; }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h3>🐛 디버그 패널</h3>
+        <div id="debug-log"></div>
+        <button onclick="clearDebug()" style="background: #333; color: white; border: none; padding: 5px; margin-top: 10px; width: 100%;">
+            로그 지우기
+        </button>
+    </div>
+    
+    <div class="main-content">
+        <div id="root"></div>
+    </div>
+    
+    <!-- 원래 스크립트들 -->
+    <script src="js/database.js"></script>
+    <script src="data/questions.js"></script>
+    <script src="data/additional-questions.js"></script>
+    
+    <script>
+        // 디버그 로깅 시스템
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+        
+        const debugLog = document.getElementById('debug-log');
+        
+        function addDebugMessage(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `debug-item ${type}`;
+            div.innerHTML = `
+                <strong>${new Date().toLocaleTimeString()}</strong><br>
+                <pre style="white-space: pre-wrap; font-family: monospace; font-size: 11px;">${message}</pre>
+            `;
+            debugLog.appendChild(div);
+            debugLog.scrollTop = debugLog.scrollHeight;
+        }
+        
+        function clearDebug() {
+            debugLog.innerHTML = '';
+        }
+        
+        // 콘솔 오버라이드
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            addDebugMessage(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            addDebugMessage(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            addDebugMessage(args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' '), 'warning');
+        };
+        
+        // 에러 캐치
+        window.addEventListener('error', function(e) {
+            addDebugMessage(`ERROR: ${e.message}\nFile: ${e.filename}\nLine: ${e.lineno}:${e.colno}`, 'error');
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            addDebugMessage(`PROMISE REJECTION: ${e.reason}`, 'error');
+        });
+        
+        // React 에러 경계
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error: error };
+            }
+            
+            componentDidCatch(error, errorInfo) {
+                console.error('React Error Boundary:', error, errorInfo);
+            }
+            
+            render() {
+                if (this.state.hasError) {
+                    return React.createElement('div', {
+                        className: 'p-8 bg-red-100 border-2 border-red-500 rounded-lg m-4'
+                    }, [
+                        React.createElement('h2', { 
+                            key: 'title',
+                            className: 'text-2xl font-bold text-red-700 mb-4' 
+                        }, '🚨 React 에러 발생'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-red-600 mb-4'
+                        }, '애플리케이션에서 오류가 발생했습니다.'),
+                        React.createElement('pre', {
+                            key: 'error',
+                            className: 'bg-red-50 p-4 rounded text-sm text-red-800 overflow-auto'
+                        }, this.state.error?.toString() || '알 수 없는 오류'),
+                        React.createElement('button', {
+                            key: 'reload',
+                            onClick: () => window.location.reload(),
+                            className: 'bg-red-500 text-white px-4 py-2 rounded mt-4'
+                        }, '페이지 새로고침')
+                    ]);
+                }
+                
+                return this.props.children;
+            }
+        }
+        
+        addDebugMessage('디버그 시스템 초기화 완료', 'success');
+        addDebugMessage('React: ' + (typeof React !== 'undefined' ? '✅' : '❌'), React ? 'success' : 'error');
+        addDebugMessage('ReactDOM: ' + (typeof ReactDOM !== 'undefined' ? '✅' : '❌'), ReactDOM ? 'success' : 'error');
+        addDebugMessage('Database: ' + (typeof MathQuizDatabase !== 'undefined' ? '✅' : '❌'), MathQuizDatabase ? 'success' : 'error');
+        addDebugMessage('Questions: ' + (typeof questionsData !== 'undefined' ? '✅' : '❌'), questionsData ? 'success' : 'error');
+    </script>
+    
+    <script type="text/babel">
+        // 디버그 버전의 앱
+        const { useState, useEffect } = React;
+        
+        function DebugApp() {
+            const [status, setStatus] = useState('초기화 중...');
+            const [database, setDatabase] = useState(null);
+            const [testResults, setTestResults] = useState([]);
+            
+            useEffect(() => {
+                runDebugTests();
+            }, []);
+            
+            const runDebugTests = async () => {
+                const results = [];
+                
+                try {
+                    // 테스트 1: 기본 환경
+                    console.log('테스트 1: 기본 환경 체크');
+                    results.push({
+                        name: '기본 환경',
+                        status: 'success',
+                        message: '브라우저 환경 정상'
+                    });
+                    
+                    // 테스트 2: React
+                    console.log('테스트 2: React 라이브러리 체크');
+                    if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                        results.push({
+                            name: 'React 라이브러리',
+                            status: 'success',
+                            message: 'React 정상 로드됨'
+                        });
+                    } else {
+                        results.push({
+                            name: 'React 라이브러리',
+                            status: 'error',
+                            message: 'React 로드 실패'
+                        });
+                    }
+                    
+                    // 테스트 3: 데이터베이스
+                    console.log('테스트 3: 데이터베이스 초기화');
+                    if (typeof MathQuizDatabase !== 'undefined') {
+                        try {
+                            const db = new MathQuizDatabase();
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            setDatabase(db);
+                            results.push({
+                                name: '데이터베이스',
+                                status: 'success',
+                                message: 'IndexedDB 정상 작동'
+                            });
+                        } catch (error) {
+                            results.push({
+                                name: '데이터베이스',
+                                status: 'error',
+                                message: 'DB 초기화 실패: ' + error.message
+                            });
+                        }
+                    } else {
+                        results.push({
+                            name: '데이터베이스',
+                            status: 'error',
+                            message: 'MathQuizDatabase 클래스 없음'
+                        });
+                    }
+                    
+                    // 테스트 4: 문제 데이터
+                    console.log('테스트 4: 문제 데이터 체크');
+                    if (typeof questionsData !== 'undefined') {
+                        const easyCount = questionsData.easy?.length || 0;
+                        const mediumCount = questionsData.medium?.length || 0;
+                        const hardCount = questionsData.hard?.length || 0;
+                        
+                        results.push({
+                            name: '문제 데이터',
+                            status: 'success',
+                            message: `쉬움: ${easyCount}개, 보통: ${mediumCount}개, 어려움: ${hardCount}개`
+                        });
+                    } else {
+                        results.push({
+                            name: '문제 데이터',
+                            status: 'error',
+                            message: 'questionsData 객체 없음'
+                        });
+                    }
+                    
+                    setTestResults(results);
+                    setStatus('테스트 완료');
+                    
+                } catch (error) {
+                    console.error('디버그 테스트 중 오류:', error);
+                    setStatus('테스트 실패: ' + error.message);
+                }
+            };
+            
+            return React.createElement('div', {
+                className: 'p-8 max-w-4xl mx-auto'
+            }, [
+                React.createElement('h1', {
+                    key: 'title',
+                    className: 'text-3xl font-bold mb-8 text-center'
+                }, '🐛 디버그 모드'),
+                
+                React.createElement('div', {
+                    key: 'status',
+                    className: 'mb-8 p-4 bg-blue-100 rounded-lg'
+                }, [
+                    React.createElement('h2', {
+                        key: 'status-title',
+                        className: 'font-bold mb-2'
+                    }, '상태'),
+                    React.createElement('p', {
+                        key: 'status-text'
+                    }, status)
+                ]),
+                
+                React.createElement('div', {
+                    key: 'results',
+                    className: 'space-y-4'
+                }, testResults.map((result, index) => 
+                    React.createElement('div', {
+                        key: `result-${index}`,
+                        className: `p-4 rounded-lg border-2 ${
+                            result.status === 'success' 
+                                ? 'bg-green-100 border-green-500' 
+                                : 'bg-red-100 border-red-500'
+                        }`
+                    }, [
+                        React.createElement('h3', {
+                            key: 'result-title',
+                            className: 'font-bold'
+                        }, `${result.status === 'success' ? '✅' : '❌'} ${result.name}`),
+                        React.createElement('p', {
+                            key: 'result-message'
+                        }, result.message)
+                    ])
+                )),
+                
+                React.createElement('div', {
+                    key: 'actions',
+                    className: 'mt-8 text-center space-x-4'
+                }, [
+                    React.createElement('button', {
+                        key: 'retest-button',
+                        onClick: runDebugTests,
+                        className: 'bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600'
+                    }, '🔄 다시 테스트'),
+                    React.createElement('a', {
+                        key: 'main-link',
+                        href: 'index.html',
+                        className: 'bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 inline-block'
+                    }, '🎮 메인 게임으로')
+                ])
+            ]);
+        }
+        
+        // 에러 경계로 감싸서 렌더링
+        ReactDOM.render(
+            React.createElement(ErrorBoundary, null,
+                React.createElement(DebugApp)
+            ),
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
