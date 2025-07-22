@@ -440,7 +440,7 @@ function HomePage({ onUserSubmit, onStartGame, database, onNavigateToAppliances,
 }
 
 // 결과 페이지 컴포넌트
-function ResultPage({ score, totalQuestions, answers, onReturnHome, onViewScoreboard }) {
+function ResultPage({ score, totalQuestions, answers, onReturnHome, onViewScoreboard, onRestartGame, sessionReward }) {
     const correctAnswers = answers.filter(a => a.isCorrect).length;
     const totalSteps = totalQuestions * 3;
     const accuracy = Math.round((correctAnswers / totalSteps) * 100);
@@ -530,15 +530,61 @@ function ResultPage({ score, totalQuestions, answers, onReturnHome, onViewScoreb
             ])
         ]),
         
+        // 세션 완료 상품 표시 (빵파레 효과)
+        sessionReward && React.createElement('div', {
+            key: 'session-reward',
+            className: "mb-8 p-6 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-lg border-4 border-yellow-300 animate-pulse"
+        }, [
+            React.createElement('div', {
+                key: 'fanfare',
+                className: "text-6xl mb-4 animate-bounce"
+            }, '🎉'),
+            React.createElement('h3', {
+                key: 'reward-title',
+                className: "text-2xl font-bold text-yellow-800 mb-3"
+            }, '🏆 세션 완료 보상! 🏆'),
+            React.createElement('div', {
+                key: 'reward-appliance',
+                className: "flex items-center justify-center space-x-4 p-4 bg-white rounded-lg"
+            }, [
+                React.createElement('div', {
+                    key: 'appliance-icon',
+                    className: "text-5xl"
+                }, sessionReward.emoji || '🏠'),
+                React.createElement('div', {
+                    key: 'appliance-info',
+                    className: "text-left"
+                }, [
+                    React.createElement('h4', {
+                        key: 'appliance-name',
+                        className: "text-xl font-bold text-gray-800"
+                    }, sessionReward.name),
+                    React.createElement('p', {
+                        key: 'appliance-brand',
+                        className: "text-gray-600"
+                    }, `${sessionReward.brand} - ${sessionReward.category}`)
+                ])
+            ]),
+            React.createElement('p', {
+                key: 'reward-message',
+                className: "text-yellow-700 font-bold mt-3"
+            }, '3문제 모두 정답! 축하합니다! 🎊')
+        ]),
+        
         React.createElement('div', {
             key: 'action-buttons',
             className: "flex flex-col sm:flex-row gap-4 justify-center"
         }, [
             React.createElement('button', {
+                key: 'restart-button',
+                onClick: onRestartGame,
+                className: "bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            }, '🔄 다시 게임하기'),
+            React.createElement('button', {
                 key: 'home-button',
                 onClick: onReturnHome,
                 className: "bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
-            }, '🏠 다시 하기'),
+            }, '🏠 홈으로'),
             React.createElement('button', {
                 key: 'scoreboard-button',
                 onClick: onViewScoreboard,
@@ -906,7 +952,9 @@ function App() {
     const [newApplianceEarned, setNewApplianceEarned] = useState(null);
     const [sessionCompletedQuestions, setSessionCompletedQuestions] = useState(0);
     const [sessionApplianceAwarded, setSessionApplianceAwarded] = useState(false);
+    const [sessionReward, setSessionReward] = useState(null);
     const [playerELO, setPlayerELO] = useState(1200); // 기본 ELO 점수
+    const [totalScore, setTotalScore] = useState(0); // 누적 점수
     
     useEffect(() => {
         initializeApp();
@@ -976,9 +1024,9 @@ function App() {
         return Math.min(complexity, 1.0);
     };
 
-    const awardRandomAppliance = async () => {
+    const awardRandomAppliance = async (isSessionReward = false) => {
         try {
-            if (!user || !database) return;
+            if (!user || !database) return null;
             
             // 전체 가전제품 목록에서 랜덤 선택
             let allAppliances = [];
@@ -989,7 +1037,7 @@ function App() {
                 allAppliances = [...allAppliances, ...enhancedAppliancesData];
             }
             
-            if (allAppliances.length === 0) return;
+            if (allAppliances.length === 0) return null;
             
             const randomAppliance = allAppliances[Math.floor(Math.random() * allAppliances.length)];
             
@@ -998,19 +1046,27 @@ function App() {
             // 가전제품 추가
             await database.addApplianceToUser(user.id, randomAppliance.id);
             
-            // 획득한 가전제품 정보 설정
-            setNewApplianceEarned(randomAppliance);
-            
             // 가전제품 수 업데이트
             loadUserApplianceCount();
             
-            // 3초 후 팝업 자동 닫기
-            setTimeout(() => {
-                setNewApplianceEarned(null);
-            }, 3000);
+            if (isSessionReward) {
+                // 세션 완료 보상으로 설정
+                setSessionReward(randomAppliance);
+            } else {
+                // 일반 획득한 가전제품 정보 설정
+                setNewApplianceEarned(randomAppliance);
+                
+                // 3초 후 팝업 자동 닫기
+                setTimeout(() => {
+                    setNewApplianceEarned(null);
+                }, 3000);
+            }
+            
+            return randomAppliance;
             
         } catch (error) {
             console.error('가전제품 획득 중 오류:', error);
+            return null;
         }
     };
     
@@ -1057,6 +1113,7 @@ function App() {
             // 세션 상태 초기화
             setSessionCompletedQuestions(0);
             setSessionApplianceAwarded(false);
+            setSessionReward(null);
             
             // 해당 난이도의 문제 가져오기 (한 세션에 3문제로 제한)
             let gameQuestions = await database.getQuestionsByDifficulty(difficulty, 3);
@@ -1185,6 +1242,7 @@ function App() {
         
         if (isCorrect) {
             setScore(prev => prev + baseScore);
+            setTotalScore(prev => prev + baseScore); // 누적 점수에도 추가
             
             // 세션 완료 문제 수 증가
             const newCompletedCount = sessionCompletedQuestions + 1;
@@ -1192,7 +1250,8 @@ function App() {
             
             // 3문제 완료시 가전제품 확정 지급 체크
             if (newCompletedCount >= 3 && !sessionApplianceAwarded) {
-                awardRandomAppliance();
+                // 세션 완료 보상으로 가전제품 지급
+                awardRandomAppliance(true);
                 setSessionApplianceAwarded(true);
             }
         }
@@ -1235,6 +1294,20 @@ function App() {
     
     const quitGame = () => {
         endGame();
+    };
+    
+    const restartGame = (difficulty) => {
+        if (!user) return;
+        
+        // 현재 세션의 난이도로 다시 시작하거나 새로운 난이도로 시작
+        const gameDifficulty = difficulty || gameSession?.difficulty || 'easy';
+        
+        // 점수는 초기화하지 않고 누적 유지
+        setScore(0); // 세션 점수만 초기화
+        setSessionReward(null); // 세션 보상 초기화
+        
+        // 새 게임 시작
+        startGame(gameDifficulty);
     };
 
     const skipQuestion = async () => {
@@ -1346,7 +1419,9 @@ function App() {
                     totalQuestions: questions.length,
                     answers: answers,
                     onReturnHome: () => setCurrentPage('home'),
-                    onViewScoreboard: () => setCurrentPage('scoreboard')
+                    onViewScoreboard: () => setCurrentPage('scoreboard'),
+                    onRestartGame: () => restartGame(),
+                    sessionReward: sessionReward
                 });
             case 'scoreboard':
                 // 새로운 완전한 스코어보드 사용

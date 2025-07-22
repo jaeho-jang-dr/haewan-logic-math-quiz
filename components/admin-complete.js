@@ -8,10 +8,24 @@ function CompleteAdminPage({ database, onReturnHome }) {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [leaderboard, setLeaderboard] = useState(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loginForm, setLoginForm] = useState({ username: '', password: '' });
 
     useEffect(() => {
-        loadAdminData();
-    }, [database]);
+        if (isAuthenticated) {
+            loadAdminData();
+        }
+    }, [database, isAuthenticated]);
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        if (loginForm.username === 'admin' && loginForm.password === '1234') {
+            setIsAuthenticated(true);
+        } else {
+            alert('잘못된 아이디 또는 비밀번호입니다.');
+            setLoginForm({ username: '', password: '' });
+        }
+    };
 
     const loadAdminData = async () => {
         try {
@@ -552,6 +566,301 @@ function CompleteAdminPage({ database, onReturnHome }) {
     };
 
     // 시스템 설정 렌더링
+    // 문제은행 렌더링
+    const renderQuestionBank = () => {
+        const getAllQuestions = () => {
+            let allQuestions = [];
+            
+            if (typeof easyQuestions !== 'undefined') {
+                allQuestions = [...allQuestions, ...easyQuestions.map(q => ({...q, difficulty: 'easy', source: 'original'}))];
+            }
+            if (typeof mediumQuestions !== 'undefined') {
+                allQuestions = [...allQuestions, ...mediumQuestions.map(q => ({...q, difficulty: 'medium', source: 'original'}))];
+            }
+            if (typeof hardQuestions !== 'undefined') {
+                allQuestions = [...allQuestions, ...hardQuestions.map(q => ({...q, difficulty: 'hard', source: 'original'}))];
+            }
+            if (typeof easyNatureQuestions !== 'undefined') {
+                allQuestions = [...allQuestions, ...easyNatureQuestions.map(q => ({...q, difficulty: 'easy', source: 'nature'}))];
+            }
+            if (typeof mediumNatureQuestions !== 'undefined') {
+                allQuestions = [...allQuestions, ...mediumNatureQuestions.map(q => ({...q, difficulty: 'medium', source: 'nature'}))];
+            }
+            if (typeof hardNatureQuestions !== 'undefined') {
+                allQuestions = [...allQuestions, ...hardNatureQuestions.map(q => ({...q, difficulty: 'hard', source: 'nature'}))];
+            }
+            
+            return allQuestions;
+        };
+
+        const questions = getAllQuestions();
+        
+        return React.createElement('div', {
+            className: 'space-y-6'
+        }, [
+            React.createElement('h3', {
+                key: 'title',
+                className: 'text-2xl font-bold text-gray-800'
+            }, '📚 문제은행 관리'),
+            
+            React.createElement('div', {
+                key: 'question-stats',
+                className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'
+            }, [
+                React.createElement('div', {
+                    key: 'easy-count',
+                    className: 'bg-green-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-green-600'
+                    }, questions.filter(q => q.difficulty === 'easy').length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '쉬움 문제')
+                ]),
+                React.createElement('div', {
+                    key: 'medium-count',
+                    className: 'bg-yellow-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-yellow-600'
+                    }, questions.filter(q => q.difficulty === 'medium').length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '보통 문제')
+                ]),
+                React.createElement('div', {
+                    key: 'hard-count',
+                    className: 'bg-red-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-red-600'
+                    }, questions.filter(q => q.difficulty === 'hard').length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '어려움 문제')
+                ]),
+                React.createElement('div', {
+                    key: 'total-count',
+                    className: 'bg-blue-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-blue-600'
+                    }, questions.length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '전체 문제')
+                ])
+            ]),
+            
+            React.createElement('div', {
+                key: 'question-list',
+                className: 'bg-white rounded-lg border overflow-hidden'
+            }, [
+                React.createElement('div', {
+                    key: 'header-row',
+                    className: 'bg-gray-50 border-b'
+                }, [
+                    React.createElement('div', {
+                        key: 'header-content',
+                        className: 'grid grid-cols-6 gap-4 p-4 font-semibold text-sm text-gray-600'
+                    }, [
+                        React.createElement('div', { key: 'id' }, 'ID'),
+                        React.createElement('div', { key: 'difficulty' }, '난이도'),
+                        React.createElement('div', { key: 'source' }, '출처'),
+                        React.createElement('div', { key: 'steps' }, '단계'),
+                        React.createElement('div', { key: 'question' }, '문제'),
+                        React.createElement('div', { key: 'actions' }, '관리')
+                    ])
+                ]),
+                React.createElement('div', {
+                    key: 'question-rows',
+                    className: 'max-h-96 overflow-y-auto'
+                }, questions.slice(0, 50).map((question, index) => 
+                    React.createElement('div', {
+                        key: `question-${question.id}-${index}`,
+                        className: 'grid grid-cols-6 gap-4 p-4 border-b hover:bg-gray-50 text-sm'
+                    }, [
+                        React.createElement('div', { key: 'id' }, question.id),
+                        React.createElement('span', {
+                            key: 'difficulty',
+                            className: `px-2 py-1 rounded text-xs ${
+                                question.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
+                                question.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-red-100 text-red-800'
+                            }`
+                        }, question.difficulty),
+                        React.createElement('span', {
+                            key: 'source',
+                            className: `px-2 py-1 rounded text-xs ${
+                                question.source === 'nature' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                            }`
+                        }, question.source === 'nature' ? '자연' : '기본'),
+                        React.createElement('div', { key: 'steps' }, question.steps ? question.steps.length : 1),
+                        React.createElement('div', { 
+                            key: 'question',
+                            className: 'truncate',
+                            title: question.question
+                        }, question.question.substring(0, 50) + (question.question.length > 50 ? '...' : '')),
+                        React.createElement('button', {
+                            key: 'view-button',
+                            className: 'bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs',
+                            onClick: () => alert('문제 상세정보:\\n\\n' + JSON.stringify(question, null, 2))
+                        }, '상세보기')
+                    ])
+                ))
+            ])
+        ]);
+    };
+
+    // 상품뱅크 렌더링
+    const renderApplianceBank = () => {
+        const getAllAppliances = () => {
+            let allAppliances = [];
+            
+            if (typeof appliancesData !== 'undefined') {
+                allAppliances = [...allAppliances, ...appliancesData.map(a => ({...a, source: 'basic'}))];
+            }
+            if (typeof enhancedAppliancesData !== 'undefined') {
+                allAppliances = [...allAppliances, ...enhancedAppliancesData.map(a => ({...a, source: 'enhanced'}))];
+            }
+            
+            return allAppliances;
+        };
+
+        const appliances = getAllAppliances();
+        
+        return React.createElement('div', {
+            className: 'space-y-6'
+        }, [
+            React.createElement('h3', {
+                key: 'title',
+                className: 'text-2xl font-bold text-gray-800'
+            }, '🏠 상품뱅크 관리'),
+            
+            React.createElement('div', {
+                key: 'appliance-stats',
+                className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'
+            }, [
+                React.createElement('div', {
+                    key: 'total-count',
+                    className: 'bg-purple-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-purple-600'
+                    }, appliances.length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '전체 상품')
+                ]),
+                React.createElement('div', {
+                    key: 'basic-count',
+                    className: 'bg-blue-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-blue-600'
+                    }, appliances.filter(a => a.source === 'basic').length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '기본 상품')
+                ]),
+                React.createElement('div', {
+                    key: 'enhanced-count',
+                    className: 'bg-green-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-green-600'
+                    }, appliances.filter(a => a.source === 'enhanced').length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '고급 상품')
+                ]),
+                React.createElement('div', {
+                    key: 'categories',
+                    className: 'bg-orange-100 p-4 rounded-lg text-center'
+                }, [
+                    React.createElement('div', {
+                        key: 'number',
+                        className: 'text-2xl font-bold text-orange-600'
+                    }, [...new Set(appliances.map(a => a.category))].length),
+                    React.createElement('div', {
+                        key: 'label',
+                        className: 'text-sm text-gray-600'
+                    }, '카테고리')
+                ])
+            ]),
+            
+            React.createElement('div', {
+                key: 'appliance-list',
+                className: 'bg-white rounded-lg border overflow-hidden'
+            }, [
+                React.createElement('div', {
+                    key: 'header-row',
+                    className: 'bg-gray-50 border-b'
+                }, [
+                    React.createElement('div', {
+                        key: 'header-content',
+                        className: 'grid grid-cols-7 gap-4 p-4 font-semibold text-sm text-gray-600'
+                    }, [
+                        React.createElement('div', { key: 'emoji' }, '아이콘'),
+                        React.createElement('div', { key: 'name' }, '상품명'),
+                        React.createElement('div', { key: 'brand' }, '브랜드'),
+                        React.createElement('div', { key: 'category' }, '카테고리'),
+                        React.createElement('div', { key: 'price' }, '가격'),
+                        React.createElement('div', { key: 'source' }, '출처'),
+                        React.createElement('div', { key: 'actions' }, '관리')
+                    ])
+                ]),
+                React.createElement('div', {
+                    key: 'appliance-rows',
+                    className: 'max-h-96 overflow-y-auto'
+                }, appliances.map((appliance, index) => 
+                    React.createElement('div', {
+                        key: `appliance-${appliance.id}-${index}`,
+                        className: 'grid grid-cols-7 gap-4 p-4 border-b hover:bg-gray-50 text-sm'
+                    }, [
+                        React.createElement('div', { 
+                            key: 'emoji',
+                            className: 'text-2xl'
+                        }, appliance.emoji || '🏠'),
+                        React.createElement('div', { 
+                            key: 'name',
+                            className: 'font-medium'
+                        }, appliance.name),
+                        React.createElement('div', { key: 'brand' }, appliance.brand),
+                        React.createElement('div', { key: 'category' }, appliance.category),
+                        React.createElement('div', { key: 'price' }, appliance.price ? `₩${appliance.price.toLocaleString()}` : '-'),
+                        React.createElement('span', {
+                            key: 'source',
+                            className: `px-2 py-1 rounded text-xs ${
+                                appliance.source === 'enhanced' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                            }`
+                        }, appliance.source === 'enhanced' ? '고급' : '기본'),
+                        React.createElement('button', {
+                            key: 'view-button',
+                            className: 'bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs',
+                            onClick: () => alert('상품 상세정보:\\n\\n' + JSON.stringify(appliance, null, 2))
+                        }, '상세보기')
+                    ])
+                ))
+            ])
+        ]);
+    };
+
     const renderSystemSettings = () => {
         return React.createElement('div', {
             className: 'space-y-6'
@@ -654,6 +963,87 @@ function CompleteAdminPage({ database, onReturnHome }) {
         ]);
     };
 
+    // 로그인되지 않은 경우 로그인 화면 표시
+    if (!isAuthenticated) {
+        return React.createElement('div', {
+            className: 'min-h-screen flex items-center justify-center bg-gray-100'
+        }, [
+            React.createElement('div', {
+                key: 'login-card',
+                className: 'bg-white p-8 rounded-lg shadow-lg max-w-md w-full mx-4'
+            }, [
+                React.createElement('div', {
+                    key: 'login-header',
+                    className: 'text-center mb-8'
+                }, [
+                    React.createElement('div', {
+                        key: 'admin-icon',
+                        className: 'text-6xl mb-4'
+                    }, '🔒'),
+                    React.createElement('h2', {
+                        key: 'admin-title',
+                        className: 'text-3xl font-bold text-gray-800'
+                    }, '관리자 로그인'),
+                    React.createElement('p', {
+                        key: 'admin-desc',
+                        className: 'text-gray-600 mt-2'
+                    }, '관리자 권한이 필요합니다')
+                ]),
+                React.createElement('form', {
+                    key: 'login-form',
+                    onSubmit: handleLogin,
+                    className: 'space-y-6'
+                }, [
+                    React.createElement('div', {
+                        key: 'username-field'
+                    }, [
+                        React.createElement('label', {
+                            key: 'username-label',
+                            className: 'block text-sm font-medium text-gray-700 mb-2'
+                        }, '아이디'),
+                        React.createElement('input', {
+                            key: 'username-input',
+                            type: 'text',
+                            value: loginForm.username,
+                            onChange: (e) => setLoginForm({...loginForm, username: e.target.value}),
+                            className: 'touch-input w-full',
+                            placeholder: '관리자 아이디를 입력하세요',
+                            required: true
+                        })
+                    ]),
+                    React.createElement('div', {
+                        key: 'password-field'
+                    }, [
+                        React.createElement('label', {
+                            key: 'password-label',
+                            className: 'block text-sm font-medium text-gray-700 mb-2'
+                        }, '비밀번호'),
+                        React.createElement('input', {
+                            key: 'password-input',
+                            type: 'password',
+                            value: loginForm.password,
+                            onChange: (e) => setLoginForm({...loginForm, password: e.target.value}),
+                            className: 'touch-input w-full',
+                            placeholder: '비밀번호를 입력하세요',
+                            required: true
+                        })
+                    ]),
+                    React.createElement('button', {
+                        key: 'login-submit',
+                        type: 'submit',
+                        className: 'touch-button w-full bg-blue-600 hover:bg-blue-700 text-white border-0'
+                    }, '🔓 로그인'),
+                    React.createElement('button', {
+                        key: 'home-button',
+                        type: 'button',
+                        onClick: onReturnHome,
+                        className: 'touch-button w-full bg-gray-500 hover:bg-gray-600 text-white border-0'
+                    }, '🏠 홈으로 돌아가기')
+                ])
+            ])
+        ]);
+    }
+
     if (loading) {
         return React.createElement('div', {
             className: 'text-center py-16'
@@ -724,6 +1114,24 @@ function CompleteAdminPage({ database, onReturnHome }) {
                     }`
                 }, '👥 사용자'),
                 React.createElement('button', {
+                    key: 'questions-tab',
+                    onClick: () => setActiveTab('questions'),
+                    className: `px-6 py-4 font-semibold transition-colors ${
+                        activeTab === 'questions' 
+                            ? 'border-b-2 border-gray-600 text-gray-700 bg-white' 
+                            : 'text-gray-600 hover:text-gray-800'
+                    }`
+                }, '📚 문제은행'),
+                React.createElement('button', {
+                    key: 'appliances-tab',
+                    onClick: () => setActiveTab('appliances'),
+                    className: `px-6 py-4 font-semibold transition-colors ${
+                        activeTab === 'appliances' 
+                            ? 'border-b-2 border-gray-600 text-gray-700 bg-white' 
+                            : 'text-gray-600 hover:text-gray-800'
+                    }`
+                }, '🏠 상품뱅크'),
+                React.createElement('button', {
                     key: 'settings-tab',
                     onClick: () => setActiveTab('settings'),
                     className: `px-6 py-4 font-semibold transition-colors ${
@@ -742,6 +1150,8 @@ function CompleteAdminPage({ database, onReturnHome }) {
         }, [
             activeTab === 'dashboard' && renderDashboard(),
             activeTab === 'users' && renderUserManagement(),
+            activeTab === 'questions' && renderQuestionBank(),
+            activeTab === 'appliances' && renderApplianceBank(),
             activeTab === 'settings' && renderSystemSettings()
         ]),
 
