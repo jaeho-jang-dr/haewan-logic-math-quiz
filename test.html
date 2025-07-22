@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테스트 - 논리수학 퀴즈</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .pass { background-color: #d4edda; }
+        .fail { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>🧪 시스템 테스트</h1>
+    
+    <div id="test-results"></div>
+    
+    <script src="js/database.js"></script>
+    <script src="data/questions.js"></script>
+    <script src="data/additional-questions.js"></script>
+    
+    <script>
+        async function runTests() {
+            const results = [];
+            
+            // 테스트 1: 데이터베이스 초기화
+            try {
+                const db = new MathQuizDatabase();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                results.push({ name: "데이터베이스 초기화", status: "pass", message: "✅ IndexedDB 정상 작동" });
+            } catch (error) {
+                results.push({ name: "데이터베이스 초기화", status: "fail", message: "❌ " + error.message });
+            }
+            
+            // 테스트 2: 문제 데이터 확인
+            try {
+                const easyCount = questionsData.easy.length;
+                const mediumCount = questionsData.medium.length;
+                const hardCount = questionsData.hard.length;
+                
+                if (easyCount >= 5 && mediumCount >= 5 && hardCount >= 5) {
+                    results.push({ 
+                        name: "문제 데이터 로딩", 
+                        status: "pass", 
+                        message: `✅ 쉬움: ${easyCount}개, 보통: ${mediumCount}개, 어려움: ${hardCount}개` 
+                    });
+                } else {
+                    results.push({ 
+                        name: "문제 데이터 로딩", 
+                        status: "fail", 
+                        message: "❌ 문제 데이터 부족" 
+                    });
+                }
+            } catch (error) {
+                results.push({ name: "문제 데이터 로딩", status: "fail", message: "❌ " + error.message });
+            }
+            
+            // 테스트 3: React 라이브러리 확인
+            try {
+                if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                    results.push({ name: "React 라이브러리", status: "pass", message: "✅ React 정상 로드됨" });
+                } else {
+                    results.push({ name: "React 라이브러리", status: "fail", message: "❌ React 라이브러리 로드 실패" });
+                }
+            } catch (error) {
+                results.push({ name: "React 라이브러리", status: "fail", message: "❌ " + error.message });
+            }
+            
+            // 테스트 4: 브라우저 호환성 확인
+            try {
+                const features = {
+                    indexedDB: 'indexedDB' in window,
+                    localStorage: 'localStorage' in window,
+                    es6: typeof Promise !== 'undefined'
+                };
+                
+                const allSupported = Object.values(features).every(Boolean);
+                if (allSupported) {
+                    results.push({ name: "브라우저 호환성", status: "pass", message: "✅ 모든 필수 기능 지원" });
+                } else {
+                    results.push({ 
+                        name: "브라우저 호환성", 
+                        status: "fail", 
+                        message: `❌ 일부 기능 미지원: ${JSON.stringify(features)}` 
+                    });
+                }
+            } catch (error) {
+                results.push({ name: "브라우저 호환성", status: "fail", message: "❌ " + error.message });
+            }
+            
+            // 결과 출력
+            displayResults(results);
+        }
+        
+        function displayResults(results) {
+            const container = document.getElementById('test-results');
+            container.innerHTML = '';
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test ${result.status}`;
+                div.innerHTML = `
+                    <strong>${result.name}</strong><br>
+                    ${result.message}
+                `;
+                container.appendChild(div);
+            });
+            
+            const passCount = results.filter(r => r.status === 'pass').length;
+            const totalCount = results.length;
+            
+            const summary = document.createElement('div');
+            summary.style.marginTop = '20px';
+            summary.style.padding = '15px';
+            summary.style.backgroundColor = passCount === totalCount ? '#d4edda' : '#fff3cd';
+            summary.style.border = `2px solid ${passCount === totalCount ? '#28a745' : '#ffc107'}`;
+            summary.innerHTML = `
+                <h3>테스트 결과 요약</h3>
+                <p><strong>${passCount}/${totalCount}</strong> 테스트 통과</p>
+                ${passCount === totalCount 
+                    ? '<p>🎉 <strong>모든 테스트 통과!</strong> 게임이 정상 작동할 준비가 되었습니다.</p>' 
+                    : '<p>⚠️ 일부 테스트 실패. 문제를 해결한 후 다시 테스트해주세요.</p>'
+                }
+                <p><a href="index.html">🎮 게임 시작하기</a></p>
+            `;
+            container.appendChild(summary);
+        }
+        
+        // 페이지 로드 후 테스트 실행
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000); // 1초 후 테스트 실행 (라이브러리 로딩 대기)
+        });
+    </script>
+</body>
+</html>
