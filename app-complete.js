@@ -386,6 +386,115 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
     ]);
 }
 
+// 결과 페이지 컴포넌트
+function ResultPage({ score, totalQuestions, answers, onReturnHome, onViewScoreboard }) {
+    const correctAnswers = answers.filter(a => a.isCorrect).length;
+    const totalSteps = totalQuestions * 3;
+    const accuracy = Math.round((correctAnswers / totalSteps) * 100);
+    
+    const getGradeEmoji = (accuracy) => {
+        if (accuracy >= 90) return "🌟";
+        if (accuracy >= 80) return "🎉";
+        if (accuracy >= 70) return "👍";
+        if (accuracy >= 60) return "😊";
+        return "💪";
+    };
+    
+    const getGradeMessage = (accuracy) => {
+        if (accuracy >= 90) return "완벽해요! 정말 대단한걸요!";
+        if (accuracy >= 80) return "훌륭해요! 열심히 했네요!";
+        if (accuracy >= 70) return "잘 했어요! 계속 연습해요!";
+        if (accuracy >= 60) return "좋은 시작이에요! 다시 도전해봐요!";
+        return "괜찮아요! 포기하지 말고 다시 해봐요!";
+    };
+    
+    return React.createElement('div', {
+        className: "max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center"
+    }, [
+        React.createElement('div', {
+            key: 'result-emoji',
+            className: "text-8xl mb-6 animate-bounce"
+        }, getGradeEmoji(accuracy)),
+        
+        React.createElement('h2', {
+            key: 'result-title',
+            className: "text-3xl font-bold text-gray-800 mb-4"
+        }, '퀴즈 완료!'),
+        
+        React.createElement('div', {
+            key: 'result-message',
+            className: "text-xl text-gray-600 mb-8"
+        }, getGradeMessage(accuracy)),
+        
+        React.createElement('div', {
+            key: 'stats',
+            className: "bg-gradient-to-r from-purple-100 to-pink-100 p-6 rounded-lg mb-8"
+        }, [
+            React.createElement('div', {
+                key: 'stats-grid',
+                className: "grid grid-cols-2 gap-6"
+            }, [
+                React.createElement('div', { key: 'score-stat' }, [
+                    React.createElement('div', {
+                        key: 'score-value',
+                        className: "text-3xl font-bold text-purple-600"
+                    }, score),
+                    React.createElement('div', {
+                        key: 'score-label',
+                        className: "text-sm text-gray-600"
+                    }, '총 점수')
+                ]),
+                React.createElement('div', { key: 'accuracy-stat' }, [
+                    React.createElement('div', {
+                        key: 'accuracy-value',
+                        className: "text-3xl font-bold text-pink-600"
+                    }, `${accuracy}%`),
+                    React.createElement('div', {
+                        key: 'accuracy-label',
+                        className: "text-sm text-gray-600"
+                    }, '정답률')
+                ]),
+                React.createElement('div', { key: 'correct-stat' }, [
+                    React.createElement('div', {
+                        key: 'correct-value',
+                        className: "text-3xl font-bold text-blue-600"
+                    }, correctAnswers),
+                    React.createElement('div', {
+                        key: 'correct-label',
+                        className: "text-sm text-gray-600"
+                    }, '맞은 문제')
+                ]),
+                React.createElement('div', { key: 'total-stat' }, [
+                    React.createElement('div', {
+                        key: 'total-value',
+                        className: "text-3xl font-bold text-green-600"
+                    }, totalSteps),
+                    React.createElement('div', {
+                        key: 'total-label',
+                        className: "text-sm text-gray-600"
+                    }, '전체 문제')
+                ])
+            ])
+        ]),
+        
+        React.createElement('div', {
+            key: 'action-buttons',
+            className: "flex flex-col sm:flex-row gap-4 justify-center"
+        }, [
+            React.createElement('button', {
+                key: 'home-button',
+                onClick: onReturnHome,
+                className: "bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            }, '🏠 다시 하기'),
+            React.createElement('button', {
+                key: 'scoreboard-button',
+                onClick: onViewScoreboard,
+                className: "bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors"
+            }, '🏆 순위표 보기')
+        ])
+    ]);
+}
+
 // 개선된 게임 페이지 컴포넌트 (기존과 동일하지만 향상된 UI)
 function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, onSubmitAnswer, onQuit }) {
     const [selectedAnswer, setSelectedAnswer] = useState(null);
