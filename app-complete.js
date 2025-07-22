@@ -174,6 +174,30 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                 ])
             ]),
 
+            // 게임 안내 
+            React.createElement('div', {
+                key: 'game-info',
+                className: "bg-gradient-to-r from-green-50 to-emerald-100 rounded-lg p-4 border-2 border-green-200 mb-6"
+            }, [
+                React.createElement('div', {
+                    key: 'info-content',
+                    className: "text-center"
+                }, [
+                    React.createElement('div', {
+                        key: 'info-icon',
+                        className: "text-2xl mb-2"
+                    }, '💡'),
+                    React.createElement('h4', {
+                        key: 'info-title',
+                        className: "text-lg font-bold text-green-800 mb-2"
+                    }, '게임 방식'),
+                    React.createElement('p', {
+                        key: 'info-text',
+                        className: "text-sm text-green-700"
+                    }, '한 번에 3문제씩 풀어보세요! 각 문제마다 3단계로 단계별 학습이 진행됩니다. ✨')
+                ])
+            ]),
+
             // 시스템 통계 표시
             stats && React.createElement('div', {
                 key: 'stats-card',
@@ -831,8 +855,8 @@ function App() {
         try {
             console.log(`게임 시작 - 난이도: ${difficulty}`);
             
-            // 해당 난이도의 문제 가져오기
-            let gameQuestions = await database.getQuestionsByDifficulty(difficulty, 10);
+            // 해당 난이도의 문제 가져오기 (한 세션에 3문제로 제한)
+            let gameQuestions = await database.getQuestionsByDifficulty(difficulty, 3);
             
             // 데이터베이스에서 문제를 가져올 수 없으면 메모리에서 가져오기
             if (gameQuestions.length === 0) {
@@ -854,9 +878,9 @@ function App() {
                 }
                 
                 if (questionSource.length > 0) {
-                    // 문제들을 섞고 10개 선택
+                    // 문제들을 섞고 3개 선택 (한 세션 제한)
                     const shuffled = [...questionSource].sort(() => Math.random() - 0.5);
-                    gameQuestions = shuffled.slice(0, 10);
+                    gameQuestions = shuffled.slice(0, 3);
                     console.log(`메모리에서 ${gameQuestions.length}개 문제 로드됨`);
                 } else {
                     alert('문제를 불러올 수 없습니다. 페이지를 새로고침해 보세요.');
