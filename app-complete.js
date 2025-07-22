@@ -2,7 +2,7 @@
 const { useState, useEffect } = React;
 
 // 홈페이지 컴포넌트 (개선된 버전)
-function HomePage({ onUserSubmit, onStartGame, database }) {
+function HomePage({ onUserSubmit, onStartGame, database, onNavigateToAppliances, userApplianceCount }) {
     const [name, setName] = useState('');
     const [education, setEducation] = useState('');
     const [user, setUser] = useState(null);
@@ -394,9 +394,38 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
             ])
         ]),
         
+        // 가전제품 컬렉션 접근 버튼
+        React.createElement('div', {
+            key: 'appliance-section',
+            className: "mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-100 rounded-lg border-2 border-purple-200"
+        }, [
+            React.createElement('div', {
+                key: 'appliance-header',
+                className: "text-center mb-4"
+            }, [
+                React.createElement('div', {
+                    key: 'appliance-icon',
+                    className: "text-4xl mb-2"
+                }, '🏠'),
+                React.createElement('h3', {
+                    key: 'appliance-title',
+                    className: "text-lg font-bold text-purple-800 mb-2"
+                }, '나의 가전제품 컬렉션'),
+                React.createElement('p', {
+                    key: 'appliance-desc',
+                    className: "text-sm text-purple-600"
+                }, `수집한 가전제품: ${userApplianceCount}개`)
+            ]),
+            React.createElement('button', {
+                key: 'view-appliances-button',
+                onClick: onNavigateToAppliances,
+                className: "touch-button w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+            }, '🏠 가전제품 컬렉션 보기')
+        ]),
+        
         React.createElement('div', {
             key: 'user-actions',
-            className: "text-center"
+            className: "text-center mt-4"
         }, [
             React.createElement('button', {
                 key: 'logout-button',
@@ -875,6 +904,9 @@ function App() {
     const [skipUsed, setSkipUsed] = useState(false); // 문제 건너뛰기 사용 여부
     const [userApplianceCount, setUserApplianceCount] = useState(0);
     const [newApplianceEarned, setNewApplianceEarned] = useState(null);
+    const [sessionCompletedQuestions, setSessionCompletedQuestions] = useState(0);
+    const [sessionApplianceAwarded, setSessionApplianceAwarded] = useState(false);
+    const [playerELO, setPlayerELO] = useState(1200); // 기본 ELO 점수
     
     useEffect(() => {
         initializeApp();
@@ -897,6 +929,53 @@ function App() {
         }
     };
 
+    // ELO 점수 계산 함수
+    const calculateELO = (currentELO, difficulty, isCorrect, timeSpent, questionComplexity) => {
+        const K = 32; // ELO K-factor
+        let expectedScore = 0.5; // 기본 예상 점수
+        
+        // 문제 난이도에 따른 예상 점수 조정
+        switch(difficulty) {
+            case 'easy': expectedScore = 0.8; break;
+            case 'medium': expectedScore = 0.6; break;
+            case 'hard': expectedScore = 0.4; break;
+        }
+        
+        // AI 판단 복잡도에 따른 조정
+        expectedScore -= questionComplexity * 0.1;
+        
+        // 시간에 따른 조정 (빠를수록 높은 점수)
+        const timeBonus = Math.max(0, (30 - timeSpent) / 30 * 0.2);
+        
+        const actualScore = isCorrect ? 1 : 0;
+        const newELO = currentELO + K * (actualScore - expectedScore) + (timeBonus * 100);
+        
+        return Math.round(Math.max(800, Math.min(2400, newELO))); // 800-2400 범위 제한
+    };
+    
+    // AI 난이도 판단 함수
+    const getAIComplexity = (question) => {
+        // 문제 텍스트 길이
+        const textLength = question.question.length;
+        
+        // 단계 수
+        const stepCount = question.steps ? question.steps.length : 1;
+        
+        // 수학적 복잡도 키워드 검사
+        const complexKeywords = ['곱셈', '나눗셈', '분수', '소수', '비율', '면적', '부피', '속도', '확률'];
+        const keywordCount = complexKeywords.filter(keyword => 
+            question.question.includes(keyword)
+        ).length;
+        
+        // 0-1 사이의 복잡도 점수 반환
+        let complexity = 0;
+        complexity += Math.min(textLength / 200, 0.3); // 텍스트 길이 (최대 0.3)
+        complexity += Math.min(stepCount / 5, 0.4); // 단계 수 (최대 0.4)
+        complexity += Math.min(keywordCount / 3, 0.3); // 키워드 (최대 0.3)
+        
+        return Math.min(complexity, 1.0);
+    };
+
     const awardRandomAppliance = async () => {
         try {
             if (!user || !database) return;
@@ -914,9 +993,7 @@ function App() {
             
             const randomAppliance = allAppliances[Math.floor(Math.random() * allAppliances.length)];
             
-            // 이미 가지고 있는지 확인
-            const hasAppliance = await database.hasUserAppliance(user.id, randomAppliance.id);
-            if (hasAppliance) return; // 이미 가지고 있으면 중복 방지
+            // 중복 수집 허용 - 사용자 요청사항
             
             // 가전제품 추가
             await database.addApplianceToUser(user.id, randomAppliance.id);
@@ -925,7 +1002,7 @@ function App() {
             setNewApplianceEarned(randomAppliance);
             
             // 가전제품 수 업데이트
-            setUserApplianceCount(prev => prev + 1);
+            loadUserApplianceCount();
             
             // 3초 후 팝업 자동 닫기
             setTimeout(() => {
@@ -977,6 +1054,10 @@ function App() {
         try {
             console.log(`게임 시작 - 난이도: ${difficulty}`);
             
+            // 세션 상태 초기화
+            setSessionCompletedQuestions(0);
+            setSessionApplianceAwarded(false);
+            
             // 해당 난이도의 문제 가져오기 (한 세션에 3문제로 제한)
             let gameQuestions = await database.getQuestionsByDifficulty(difficulty, 3);
             
@@ -1015,10 +1096,25 @@ function App() {
                 }
                 
                 if (questionSource.length > 0) {
-                    // 문제들을 섞고 3개 선택 (한 세션 제한)
-                    const shuffled = [...questionSource].sort(() => Math.random() - 0.5);
-                    gameQuestions = shuffled.slice(0, 3);
-                    console.log(`메모리에서 ${gameQuestions.length}개 문제 로드됨`);
+                    // 4-5단계 힌트 문제를 최소 하나 포함시키기
+                    const multiStepQuestions = questionSource.filter(q => q.steps && q.steps.length >= 4);
+                    const otherQuestions = questionSource.filter(q => !q.steps || q.steps.length < 4);
+                    
+                    let finalQuestionsList = [];
+                    
+                    // 4-5단계 문제 최소 1개 포함
+                    if (multiStepQuestions.length > 0) {
+                        finalQuestionsList.push(multiStepQuestions[Math.floor(Math.random() * multiStepQuestions.length)]);
+                    }
+                    
+                    // 나머지 2개 문제 랜덤 선택
+                    const remainingQuestions = questionSource.filter(q => !finalQuestionsList.includes(q));
+                    const shuffled = remainingQuestions.sort(() => Math.random() - 0.5);
+                    finalQuestionsList = [...finalQuestionsList, ...shuffled.slice(0, 2)];
+                    
+                    // 최종 섞기
+                    gameQuestions = finalQuestionsList.sort(() => Math.random() - 0.5);
+                    console.log(`메모리에서 ${gameQuestions.length}개 문제 로드됨 (4-5단계 힌트 문제 포함)`);
                 } else {
                     alert('문제를 불러올 수 없습니다. 페이지를 새로고침해 보세요.');
                     return;
@@ -1043,10 +1139,34 @@ function App() {
         }
     };
     
-    const submitAnswer = (selectedAnswer) => {
+    const submitAnswer = (selectedAnswer, timeSpent = 15) => {
         const currentQuestion = questions[currentQuestionIndex];
         const currentStep = currentQuestion.steps[currentStepIndex];
         const isCorrect = selectedAnswer === currentStep.correct;
+        
+        // AI 복잡도 판단
+        const questionComplexity = getAIComplexity(currentQuestion);
+        
+        // ELO 점수 계산 (숨겨진 계산)
+        const newELO = calculateELO(playerELO, gameSession?.difficulty || 'easy', isCorrect, timeSpent, questionComplexity);
+        setPlayerELO(newELO);
+        
+        // 기본 점수 계산 (AI 난이도와 ELO 보정 포함)
+        let baseScore = 10;
+        
+        // AI 복잡도에 따른 점수 조정
+        baseScore += Math.round(questionComplexity * 15); // 0-15점 추가
+        
+        // ELO 변화량에 따른 보정 (숨겨진 보정)
+        const eloChange = newELO - playerELO;
+        if (eloChange > 0) {
+            baseScore += Math.round(eloChange / 10); // ELO 상승시 추가 점수
+        }
+        
+        // 시간 보너스
+        if (timeSpent < 15) {
+            baseScore += Math.round((15 - timeSpent) / 3);
+        }
         
         // 답안 기록
         const answerRecord = {
@@ -1055,16 +1175,25 @@ function App() {
             selectedAnswer,
             correct: currentStep.correct,
             isCorrect,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            score: isCorrect ? baseScore : 0,
+            complexity: questionComplexity,
+            timeSpent
         };
         
         setAnswers(prev => [...prev, answerRecord]);
         
         if (isCorrect) {
-            setScore(prev => prev + 10);
-            // 정답 시 가전제품 획득 (30% 확률)
-            if (Math.random() < 0.3) {
+            setScore(prev => prev + baseScore);
+            
+            // 세션 완료 문제 수 증가
+            const newCompletedCount = sessionCompletedQuestions + 1;
+            setSessionCompletedQuestions(newCompletedCount);
+            
+            // 3문제 완료시 가전제품 확정 지급 체크
+            if (newCompletedCount >= 3 && !sessionApplianceAwarded) {
                 awardRandomAppliance();
+                setSessionApplianceAwarded(true);
             }
         }
         
@@ -1195,7 +1324,9 @@ function App() {
                 return React.createElement(HomePage, {
                     onUserSubmit: setUser, 
                     onStartGame: startGame,
-                    database: database
+                    database: database,
+                    onNavigateToAppliances: () => setCurrentPage('appliances'),
+                    userApplianceCount: userApplianceCount
                 });
             case 'game':
                 return React.createElement(GamePage, {

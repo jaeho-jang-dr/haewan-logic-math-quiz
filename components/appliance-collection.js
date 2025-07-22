@@ -206,7 +206,11 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                         React.createElement('div', {
                             key: 'brand-category',
                             className: "text-lg text-gray-600"
-                        }, `${selectedAppliance.brand} - ${selectedAppliance.category}`)
+                        }, `${selectedAppliance.brand} - ${selectedAppliance.category}`),
+                        selectedAppliance.releaseYear && React.createElement('div', {
+                            key: 'release-info',
+                            className: "text-sm text-gray-500 mt-2"
+                        }, `${selectedAppliance.releaseYear}년 출시 | ${selectedAppliance.countryOfOrigin || '정보없음'}`)
                     ]),
 
                     selectedAppliance.description && React.createElement('div', {
@@ -220,7 +224,20 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                         React.createElement('p', {
                             key: 'desc-text',
                             className: "text-gray-700"
-                        }, selectedAppliance.description)
+                        }, selectedAppliance.description),
+                        selectedAppliance.specialFeature && React.createElement('div', {
+                            key: 'special-feature',
+                            className: "mt-3 p-3 bg-yellow-50 rounded border-l-4 border-yellow-400"
+                        }, [
+                            React.createElement('h5', {
+                                key: 'special-title',
+                                className: "font-bold text-yellow-800 mb-1"
+                            }, '🌟 특별한 특징'),
+                            React.createElement('p', {
+                                key: 'special-text',
+                                className: "text-yellow-700 text-sm"
+                            }, selectedAppliance.specialFeature)
+                        ])
                     ]),
 
                     selectedAppliance.specifications && React.createElement('div', {

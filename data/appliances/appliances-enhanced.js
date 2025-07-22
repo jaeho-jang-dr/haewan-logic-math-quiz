@@ -11,6 +11,9 @@ const enhancedAppliancesData = [
         features: ["무날개", "냉온겸용", "리모컨", "타이머", "오실레이트"],
         emoji: "🌀",
         description: "혁신적인 무날개 기술로 안전하고 강력한 바람",
+        releaseYear: 2014,
+        countryOfOrigin: "영국",
+        specialFeature: "제임스 다이슨이 발명한 에어 멀티플라이어 기술 사용",
         specifications: {
             power: "40W",
             airflow: "500L/s",
@@ -31,6 +34,9 @@ const enhancedAppliancesData = [
         features: ["자연바람", "DC모터", "15단계풍속", "무선리모컨"],
         emoji: "🍃",
         description: "자연바람을 재현한 일본의 프리미엄 선풍기",
+        releaseYear: 2019,
+        countryOfOrigin: "일본",
+        specialFeature: "다단계 임펠러 날개로 자연에서 느낄 수 있는 바람 재현",
         specifications: {
             power: "20W",
             airflow: "380L/s",
