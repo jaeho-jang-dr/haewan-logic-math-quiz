@@ -29,7 +29,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                     totalGames: scores.length,
                     averageScore: Math.round(scores.reduce((sum, s) => sum + s.totalScore, 0) / scores.length || 0),
                     highestScore: Math.max(...scores.map(s => s.totalScore), 0),
-                    totalQuestions: 300 // 기존 150 + 자연테마 150 = 300
+                    totalQuestions: 0 // 문제 개수 표시하지 않음
                 });
             }
         } catch (error) {
@@ -101,7 +101,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                             className: "flex items-center space-x-2"
                         }, [
                             React.createElement('span', { key: 'icon1' }, '📚'),
-                            React.createElement('span', { key: 'text1' }, '300개 문제')
+                            React.createElement('span', { key: 'text1' }, '다양한 문제')
                         ]),
                         React.createElement('div', {
                             key: 'feature2',
@@ -251,17 +251,17 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                         }, '최고점수')
                     ]),
                     React.createElement('div', {
-                        key: 'total-questions',
+                        key: 'learning-type',
                         className: "text-center"
                     }, [
                         React.createElement('div', {
-                            key: 'number',
+                            key: 'icon',
                             className: "text-2xl font-bold text-purple-600"
-                        }, stats.totalQuestions),
+                        }, '🧠'),
                         React.createElement('div', {
                             key: 'label',
                             className: "text-sm text-gray-600"
-                        }, '총 문제')
+                        }, '논리수학')
                     ])
                 ])
             ])
@@ -524,11 +524,13 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
     const [selectedAnswer, setSelectedAnswer] = useState(null);
     const [showExplanation, setShowExplanation] = useState(false);
     const [answered, setAnswered] = useState(false);
+    const [showQuestionPopup, setShowQuestionPopup] = useState(false);
     
     useEffect(() => {
         setSelectedAnswer(null);
         setShowExplanation(false);
         setAnswered(false);
+        setShowQuestionPopup(false);
     }, [question, stepIndex]);
     
     if (!question) {
@@ -698,8 +700,14 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
                     }, stepIndex === 0 ? "🤔" : stepIndex === 1 ? "🔍" : "✨"),
                     React.createElement('h3', {
                         key: 'step-title',
-                        className: "text-2xl font-bold text-gray-800"
-                    }, currentStep.question)
+                        className: "text-2xl font-bold text-gray-800 mb-4"
+                    }, currentStep.question),
+                    // 문제 다시보기 버튼 (첫 번째 단계가 아닐 때만 표시)
+                    stepIndex > 0 && React.createElement('button', {
+                        key: 'show-question-button',
+                        onClick: () => setShowQuestionPopup(true),
+                        className: "touch-button bg-blue-500 hover:bg-blue-600 text-white border-0 text-sm px-4 py-2 mb-4"
+                    }, '📝 문제 다시보기')
                 ]),
                 
                 // 선택지 (iPhone 최적화)
@@ -809,6 +817,46 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
                 ])
             ])
         ])
+        ]),
+        
+        // 문제 다시보기 팝업
+        showQuestionPopup && React.createElement('div', {
+            key: 'question-popup',
+            className: "iphone-modal",
+            onClick: (e) => {
+                if (e.target === e.currentTarget) {
+                    setShowQuestionPopup(false);
+                }
+            }
+        }, [
+            React.createElement('div', {
+                key: 'popup-content',
+                className: "iphone-modal-content"
+            }, [
+                React.createElement('div', {
+                    key: 'popup-header',
+                    className: "flex justify-between items-center mb-4"
+                }, [
+                    React.createElement('h3', {
+                        key: 'popup-title',
+                        className: "text-xl font-bold text-gray-800"
+                    }, '📝 원래 문제'),
+                    React.createElement('button', {
+                        key: 'close-button',
+                        onClick: () => setShowQuestionPopup(false),
+                        className: "touch-button bg-gray-200 text-gray-600 border-0 text-sm px-3 py-1"
+                    }, '✕')
+                ]),
+                React.createElement('div', {
+                    key: 'popup-question',
+                    className: "text-lg text-gray-700 leading-relaxed mb-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200"
+                }, question.question),
+                React.createElement('button', {
+                    key: 'close-bottom-button',
+                    onClick: () => setShowQuestionPopup(false),
+                    className: "touch-button w-full bg-blue-500 hover:bg-blue-600 text-white border-0"
+                }, '확인')
+            ])
         ])
     ]);
 }
@@ -825,10 +873,69 @@ function App() {
     const [score, setScore] = useState(0);
     const [answers, setAnswers] = useState([]);
     const [skipUsed, setSkipUsed] = useState(false); // 문제 건너뛰기 사용 여부
+    const [userApplianceCount, setUserApplianceCount] = useState(0);
+    const [newApplianceEarned, setNewApplianceEarned] = useState(null);
     
     useEffect(() => {
         initializeApp();
     }, []);
+
+    useEffect(() => {
+        if (user && database) {
+            loadUserApplianceCount();
+        }
+    }, [user, database]);
+    
+    const loadUserApplianceCount = async () => {
+        try {
+            if (user && database) {
+                const count = await database.getUserApplianceCount(user.id);
+                setUserApplianceCount(count);
+            }
+        } catch (error) {
+            console.error('가전제품 수 로드 중 오류:', error);
+        }
+    };
+
+    const awardRandomAppliance = async () => {
+        try {
+            if (!user || !database) return;
+            
+            // 전체 가전제품 목록에서 랜덤 선택
+            let allAppliances = [];
+            if (typeof appliancesData !== 'undefined') {
+                allAppliances = [...allAppliances, ...appliancesData];
+            }
+            if (typeof enhancedAppliancesData !== 'undefined') {
+                allAppliances = [...allAppliances, ...enhancedAppliancesData];
+            }
+            
+            if (allAppliances.length === 0) return;
+            
+            const randomAppliance = allAppliances[Math.floor(Math.random() * allAppliances.length)];
+            
+            // 이미 가지고 있는지 확인
+            const hasAppliance = await database.hasUserAppliance(user.id, randomAppliance.id);
+            if (hasAppliance) return; // 이미 가지고 있으면 중복 방지
+            
+            // 가전제품 추가
+            await database.addApplianceToUser(user.id, randomAppliance.id);
+            
+            // 획득한 가전제품 정보 설정
+            setNewApplianceEarned(randomAppliance);
+            
+            // 가전제품 수 업데이트
+            setUserApplianceCount(prev => prev + 1);
+            
+            // 3초 후 팝업 자동 닫기
+            setTimeout(() => {
+                setNewApplianceEarned(null);
+            }, 3000);
+            
+        } catch (error) {
+            console.error('가전제품 획득 중 오류:', error);
+        }
+    };
     
     const initializeApp = async () => {
         try {
@@ -955,6 +1062,10 @@ function App() {
         
         if (isCorrect) {
             setScore(prev => prev + 10);
+            // 정답 시 가전제품 획득 (30% 확률)
+            if (Math.random() < 0.3) {
+                awardRandomAppliance();
+            }
         }
         
         // 다음 단계 또는 다음 문제로 이동
@@ -1158,6 +1269,33 @@ function App() {
                         }, '홈으로')
                     ]);
                 }
+            case 'appliances':
+                // 가전제품 컬렉션 페이지
+                if (typeof ApplianceCollectionPage !== 'undefined') {
+                    return React.createElement(ApplianceCollectionPage, {
+                        database: database,
+                        user: user,
+                        onReturnHome: () => setCurrentPage('home')
+                    });
+                } else {
+                    return React.createElement('div', {
+                        className: 'text-center py-16'
+                    }, [
+                        React.createElement('h2', {
+                            key: 'title',
+                            className: 'text-3xl font-bold mb-8'
+                        }, '🏠 가전제품 컬렉션'),
+                        React.createElement('p', {
+                            key: 'message',
+                            className: 'text-xl text-gray-600 mb-8'
+                        }, '가전제품 컬렉션을 불러오는 중...'),
+                        React.createElement('button', {
+                            key: 'home-button',
+                            onClick: () => setCurrentPage('home'),
+                            className: 'bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg'
+                        }, '홈으로')
+                    ]);
+                }
             default:
                 return React.createElement(HomePage, {
                     onUserSubmit: setUser, 
@@ -1205,6 +1343,15 @@ function App() {
                         key: 'nav-buttons',
                         className: "flex items-center space-x-2"
                     }, [
+                        user && React.createElement('button', {
+                            key: 'appliance-count',
+                            onClick: () => setCurrentPage('appliances'),
+                            className: "touch-button bg-green-500 text-white border-0 px-3 py-2 text-sm flex items-center space-x-1"
+                        }, [
+                            React.createElement('span', { key: 'icon' }, '🏠'),
+                            React.createElement('span', { key: 'count' }, userApplianceCount),
+                            React.createElement('span', { key: 'text', className: 'hidden sm:inline' }, '가전')
+                        ]),
                         React.createElement('button', {
                             key: 'scoreboard-nav',
                             onClick: () => setCurrentPage('scoreboard'),
@@ -1229,7 +1376,53 @@ function App() {
         React.createElement('main', {
             key: 'main-content',
             className: "container mx-auto px-4 py-4 md:py-8"
-        }, renderPage())
+        }, renderPage()),
+        
+        // 가전제품 획득 팝업
+        newApplianceEarned && React.createElement('div', {
+            key: 'appliance-popup',
+            className: "iphone-modal"
+        }, [
+            React.createElement('div', {
+                key: 'popup-content',
+                className: "iphone-modal-content text-center animate-scaleIn"
+            }, [
+                React.createElement('div', {
+                    key: 'congratulations',
+                    className: "text-6xl mb-4 animate-bounce"
+                }, '🎉'),
+                React.createElement('h3', {
+                    key: 'title',
+                    className: "text-2xl font-bold text-green-600 mb-2"
+                }, '새 가전제품 획득!'),
+                React.createElement('div', {
+                    key: 'appliance-info',
+                    className: "bg-gradient-to-r from-green-50 to-emerald-100 p-6 rounded-lg border-2 border-green-200 mb-4"
+                }, [
+                    React.createElement('div', {
+                        key: 'appliance-emoji',
+                        className: "text-4xl mb-2"
+                    }, newApplianceEarned.emoji || '🏠'),
+                    React.createElement('div', {
+                        key: 'appliance-name',
+                        className: "text-xl font-bold text-gray-800 mb-1"
+                    }, newApplianceEarned.name),
+                    React.createElement('div', {
+                        key: 'appliance-brand',
+                        className: "text-sm text-gray-600"
+                    }, `${newApplianceEarned.brand} - ${newApplianceEarned.category}`)
+                ]),
+                React.createElement('div', {
+                    key: 'collection-info',
+                    className: "text-lg text-gray-700 mb-4"
+                }, `총 수집한 가전제품: ${userApplianceCount}개`),
+                React.createElement('button', {
+                    key: 'close-button',
+                    onClick: () => setNewApplianceEarned(null),
+                    className: "touch-button w-full bg-green-500 hover:bg-green-600 text-white border-0"
+                }, '확인')
+            ])
+        ])
     ]);
 }
 

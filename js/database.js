@@ -47,6 +47,14 @@ class MathQuizDatabase {
                     scoreStore.createIndex('sessionId', 'sessionId', { unique: false });
                     scoreStore.createIndex('totalScore', 'totalScore', { unique: false });
                 }
+                
+                // 가전제품 수집 테이블
+                if (!db.objectStoreNames.contains('appliance_collection')) {
+                    const applianceStore = db.createObjectStore('appliance_collection', { keyPath: 'id', autoIncrement: true });
+                    applianceStore.createIndex('userId', 'userId', { unique: false });
+                    applianceStore.createIndex('applianceId', 'applianceId', { unique: false });
+                    applianceStore.createIndex('userId_applianceId', ['userId', 'applianceId'], { unique: true });
+                }
             };
         });
     }
@@ -183,6 +191,66 @@ class MathQuizDatabase {
                 enrichedScores.sort((a, b) => b.totalScore - a.totalScore);
                 resolve(enrichedScores.slice(0, limit));
             };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    // 가전제품 수집 관련 메서드들
+    async addApplianceToUser(userId, applianceId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['appliance_collection'], 'readwrite');
+            const store = transaction.objectStore('appliance_collection');
+            
+            const applianceRecord = {
+                userId: userId,
+                applianceId: applianceId,
+                collectedAt: new Date().toISOString()
+            };
+            
+            const request = store.add(applianceRecord);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => {
+                // 이미 수집한 가전제품인 경우 무시
+                if (request.error.name === 'ConstraintError') {
+                    resolve(null);
+                } else {
+                    reject(request.error);
+                }
+            };
+        });
+    }
+
+    async getUserAppliances(userId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['appliance_collection'], 'readonly');
+            const store = transaction.objectStore('appliance_collection');
+            const index = store.index('userId');
+            
+            const request = index.getAll(userId);
+            
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async getUserApplianceCount(userId) {
+        return new Promise((resolve, reject) => {
+            this.getUserAppliances(userId).then(appliances => {
+                resolve(appliances.length);
+            }).catch(reject);
+        });
+    }
+
+    async hasUserAppliance(userId, applianceId) {
+        return new Promise((resolve, reject) => {
+            const transaction = this.db.transaction(['appliance_collection'], 'readonly');
+            const store = transaction.objectStore('appliance_collection');
+            const index = store.index('userId_applianceId');
+            
+            const request = index.get([userId, applianceId]);
+            
+            request.onsuccess = () => resolve(request.result !== undefined);
             request.onerror = () => reject(request.error);
         });
     }
