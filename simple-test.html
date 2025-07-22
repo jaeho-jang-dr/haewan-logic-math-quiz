@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간단한 테스트 - 논리수학 퀴즈</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <!-- 의존성 스크립트들 -->
+    <script src="js/database.js"></script>
+    <script src="data/questions.js"></script>
+    <script src="data/additional-questions.js"></script>
+    
+    <script>
+        const { useState, useEffect } = React;
+        
+        function SimpleTestApp() {
+            const [status, setStatus] = useState('테스트 시작...');
+            const [results, setResults] = useState([]);
+            
+            useEffect(() => {
+                runTests();
+            }, []);
+            
+            const runTests = async () => {
+                const testResults = [];
+                
+                try {
+                    // React 테스트
+                    if (typeof React !== 'undefined' && typeof ReactDOM !== 'undefined') {
+                        testResults.push({ name: 'React', status: '✅ 정상' });
+                    } else {
+                        testResults.push({ name: 'React', status: '❌ 실패' });
+                    }
+                    
+                    // 데이터베이스 테스트
+                    if (typeof MathQuizDatabase !== 'undefined') {
+                        try {
+                            const db = new MathQuizDatabase();
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                            testResults.push({ name: '데이터베이스', status: '✅ 정상' });
+                        } catch (error) {
+                            testResults.push({ name: '데이터베이스', status: '❌ 오류: ' + error.message });
+                        }
+                    } else {
+                        testResults.push({ name: '데이터베이스', status: '❌ MathQuizDatabase 없음' });
+                    }
+                    
+                    // 문제 데이터 테스트
+                    if (typeof questionsData !== 'undefined') {
+                        const easyCount = questionsData.easy?.length || 0;
+                        const mediumCount = questionsData.medium?.length || 0;
+                        const hardCount = questionsData.hard?.length || 0;
+                        testResults.push({ 
+                            name: '문제 데이터', 
+                            status: `✅ 쉬움:${easyCount}, 보통:${mediumCount}, 어려움:${hardCount}` 
+                        });
+                    } else {
+                        testResults.push({ name: '문제 데이터', status: '❌ questionsData 없음' });
+                    }
+                    
+                    setResults(testResults);
+                    setStatus('테스트 완료');
+                    
+                } catch (error) {
+                    setStatus('테스트 중 오류: ' + error.message);
+                    console.error('테스트 오류:', error);
+                }
+            };
+            
+            return React.createElement('div', {
+                className: 'p-8 max-w-2xl mx-auto'
+            }, [
+                React.createElement('h1', {
+                    key: 'title',
+                    className: 'text-3xl font-bold mb-8 text-center text-purple-600'
+                }, '🧪 간단한 시스템 테스트'),
+                
+                React.createElement('div', {
+                    key: 'status',
+                    className: 'mb-6 p-4 bg-blue-100 rounded-lg'
+                }, [
+                    React.createElement('strong', { key: 'status-label' }, '상태: '),
+                    status
+                ]),
+                
+                React.createElement('div', {
+                    key: 'results',
+                    className: 'space-y-3'
+                }, results.map((result, index) =>
+                    React.createElement('div', {
+                        key: `result-${index}`,
+                        className: 'p-3 bg-gray-50 border rounded-lg'
+                    }, [
+                        React.createElement('strong', { key: 'name' }, result.name + ': '),
+                        result.status
+                    ])
+                )),
+                
+                React.createElement('div', {
+                    key: 'actions',
+                    className: 'mt-8 text-center space-x-4'
+                }, [
+                    React.createElement('button', {
+                        key: 'retry',
+                        onClick: runTests,
+                        className: 'bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600'
+                    }, '🔄 다시 테스트'),
+                    
+                    React.createElement('a', {
+                        key: 'main',
+                        href: 'index.html',
+                        className: 'bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 inline-block'
+                    }, '🎮 메인 게임'),
+                    
+                    React.createElement('a', {
+                        key: 'debug',
+                        href: 'debug.html',
+                        className: 'bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 inline-block'
+                    }, '🐛 디버그 모드')
+                ])
+            ]);
+        }
+        
+        // 에러 처리
+        window.addEventListener('error', function(e) {
+            console.error('글로벌 에러:', e.message, e.filename, e.lineno);
+            document.body.innerHTML += `<div style="background:red;color:white;padding:10px;margin:10px;">
+                ERROR: ${e.message}<br>
+                File: ${e.filename}<br>
+                Line: ${e.lineno}:${e.colno}
+            </div>`;
+        });
+        
+        // React 렌더링
+        try {
+            ReactDOM.render(
+                React.createElement(SimpleTestApp),
+                document.getElementById('root')
+            );
+        } catch (error) {
+            console.error('React 렌더링 오류:', error);
+            document.getElementById('root').innerHTML = `
+                <div style="background:red;color:white;padding:20px;margin:20px;">
+                    <h2>React 렌더링 실패</h2>
+                    <p>${error.message}</p>
+                    <p>브라우저 콘솔을 확인해주세요.</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
