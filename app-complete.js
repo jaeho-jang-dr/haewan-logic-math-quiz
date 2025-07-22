@@ -29,7 +29,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                     totalGames: scores.length,
                     averageScore: Math.round(scores.reduce((sum, s) => sum + s.totalScore, 0) / scores.length || 0),
                     highestScore: Math.max(...scores.map(s => s.totalScore), 0),
-                    totalQuestions: 150 // 50 x 3 난이도
+                    totalQuestions: 300 // 기존 150 + 자연테마 150 = 300
                 });
             }
         } catch (error) {
@@ -70,11 +70,11 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
     
     if (!user) {
         return React.createElement('div', {
-            className: "max-w-4xl mx-auto"
+            className: "safe-area game-container min-h-screen"
         }, [
             React.createElement('div', {
                 key: 'main-card',
-                className: "bg-white rounded-lg shadow-lg p-8 mb-8"
+                className: "iphone-card p-6 mb-4"
             }, [
                 React.createElement('div', {
                     key: 'header',
@@ -101,7 +101,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                             className: "flex items-center space-x-2"
                         }, [
                             React.createElement('span', { key: 'icon1' }, '📚'),
-                            React.createElement('span', { key: 'text1' }, '150개 문제')
+                            React.createElement('span', { key: 'text1' }, '300개 문제')
                         ]),
                         React.createElement('div', {
                             key: 'feature2',
@@ -135,7 +135,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                             type: "text",
                             value: name,
                             onChange: (e) => setName(e.target.value),
-                            className: "w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg",
+                            className: "touch-input w-full",
                             placeholder: "이름을 입력하세요",
                             required: true
                         })
@@ -150,7 +150,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                             key: 'education-select',
                             value: education,
                             onChange: (e) => setEducation(e.target.value),
-                            className: "w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-lg",
+                            className: "touch-input w-full",
                             required: true
                         }, [
                             React.createElement('option', {
@@ -169,7 +169,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                     React.createElement('button', {
                         key: 'submit-button',
                         type: "submit",
-                        className: "w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold text-lg transform hover:scale-105"
+                        className: "touch-button w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0"
                     }, '게임 시작! 🚀')
                 ])
             ]),
@@ -297,16 +297,16 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
             
             React.createElement('div', {
                 key: 'difficulty-buttons',
-                className: "grid grid-cols-1 md:grid-cols-3 gap-6"
+                className: "space-y-4"
             }, [
                 React.createElement('button', {
                     key: 'easy-button',
                     onClick: () => onStartGame('easy'),
-                    className: `relative p-8 rounded-lg transition-all transform hover:scale-105 ${
+                    className: `touch-button w-full relative ${
                         recommendedDifficulty === 'easy' 
-                            ? 'bg-gradient-to-br from-green-400 to-green-600 shadow-lg ring-4 ring-green-300' 
-                            : 'bg-gradient-to-br from-green-400 to-green-500 hover:shadow-lg'
-                    } text-white text-center`
+                            ? 'bg-gradient-to-br from-green-400 to-green-600 ring-4 ring-green-300' 
+                            : 'bg-gradient-to-br from-green-400 to-green-500'
+                    } text-white text-center border-0`
                 }, [
                     recommendedDifficulty === 'easy' && React.createElement('div', {
                         key: 'recommended',
@@ -333,11 +333,11 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                 React.createElement('button', {
                     key: 'medium-button',
                     onClick: () => onStartGame('medium'),
-                    className: `relative p-8 rounded-lg transition-all transform hover:scale-105 ${
+                    className: `touch-button w-full relative ${
                         recommendedDifficulty === 'medium' 
-                            ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 shadow-lg ring-4 ring-yellow-300' 
-                            : 'bg-gradient-to-br from-yellow-400 to-yellow-500 hover:shadow-lg'
-                    } text-white text-center`
+                            ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 ring-4 ring-yellow-300' 
+                            : 'bg-gradient-to-br from-yellow-400 to-yellow-500'
+                    } text-white text-center border-0`
                 }, [
                     recommendedDifficulty === 'medium' && React.createElement('div', {
                         key: 'recommended',
@@ -364,11 +364,11 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                 React.createElement('button', {
                     key: 'hard-button',
                     onClick: () => onStartGame('hard'),
-                    className: `relative p-8 rounded-lg transition-all transform hover:scale-105 ${
+                    className: `touch-button w-full relative ${
                         recommendedDifficulty === 'hard' 
-                            ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-lg ring-4 ring-red-300' 
-                            : 'bg-gradient-to-br from-red-400 to-red-500 hover:shadow-lg'
-                    } text-white text-center`
+                            ? 'bg-gradient-to-br from-red-400 to-red-600 ring-4 ring-red-300' 
+                            : 'bg-gradient-to-br from-red-400 to-red-500'
+                    } text-white text-center border-0`
                 }, [
                     recommendedDifficulty === 'hard' && React.createElement('div', {
                         key: 'recommended',
@@ -561,12 +561,16 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
     };
     
     return React.createElement('div', {
-        className: "max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden"
+        className: "safe-area game-container min-h-screen"
     }, [
-        // 상단 정보바 (기존과 동일하지만 스타일 개선)
+        React.createElement('div', {
+            key: 'game-card',
+            className: "question-card"
+        }, [
+        // 상단 정보바 (iPhone 최적화)
         React.createElement('div', {
             key: 'header',
-            className: "bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6"
+            className: "iphone-navbar bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4"
         }, [
             React.createElement('div', {
                 key: 'info-bar',
@@ -574,68 +578,73 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
             }, [
                 React.createElement('div', {
                     key: 'info-left',
-                    className: "flex items-center space-x-6"
+                    className: "flex items-center space-x-3 md:space-x-6"
                 }, [
                     React.createElement('div', {
                         key: 'question-info',
-                        className: "bg-white bg-opacity-20 px-4 py-2 rounded-lg"
+                        className: "bg-white bg-opacity-20 px-3 py-2 rounded-lg text-center min-w-0"
                     }, [
                         React.createElement('div', {
                             key: 'question-num',
-                            className: "text-sm opacity-90"
+                            className: "text-xs opacity-90"
                         }, '문제'),
                         React.createElement('div', {
                             key: 'question-val',
-                            className: "font-bold text-lg"
+                            className: "font-bold text-sm md:text-lg"
                         }, `${questionNumber}/${totalQuestions}`)
                     ]),
                     React.createElement('div', {
                         key: 'step-info',
-                        className: "bg-white bg-opacity-20 px-4 py-2 rounded-lg"
+                        className: "bg-white bg-opacity-20 px-3 py-2 rounded-lg text-center min-w-0"
                     }, [
                         React.createElement('div', {
                             key: 'step-num',
-                            className: "text-sm opacity-90"
+                            className: "text-xs opacity-90"
                         }, '단계'),
                         React.createElement('div', {
                             key: 'step-val',
-                            className: "font-bold text-lg"
+                            className: "font-bold text-sm md:text-lg"
                         }, `${stepIndex + 1}/${question.steps.length}`)
                     ]),
                     React.createElement('div', {
                         key: 'score-info',
-                        className: "bg-gradient-to-r from-yellow-400 to-orange-400 text-white px-4 py-2 rounded-lg"
+                        className: "score-display px-3 py-2 rounded-lg text-center min-w-0"
                     }, [
                         React.createElement('div', {
                             key: 'score-label',
-                            className: "text-sm opacity-90"
+                            className: "text-xs opacity-90"
                         }, '점수'),
                         React.createElement('div', {
                             key: 'score-val',
-                            className: "font-bold text-lg"
+                            className: "font-bold text-sm md:text-lg"
                         }, `${score}점`)
                     ])
                 ]),
-                !skipUsed && React.createElement('button', {
-                    key: 'skip-button',
-                    onClick: onSkipQuestion,
-                    className: "bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg transition-colors font-semibold text-sm"
-                }, '🔄 다른 문제로'),
-                React.createElement('button', {
-                    key: 'quit-button',
-                    onClick: onQuit,
-                    className: "bg-red-500 hover:bg-red-600 px-6 py-3 rounded-lg transition-colors font-semibold"
-                }, '⏹️ 종료')
+                React.createElement('div', {
+                    key: 'action-buttons',
+                    className: "flex space-x-2"
+                }, [
+                    !skipUsed && React.createElement('button', {
+                        key: 'skip-button',
+                        onClick: onSkipQuestion,
+                        className: "touch-button bg-orange-500 hover:bg-orange-600 text-white border-0 text-sm px-3 py-2"
+                    }, '🔄 건너뛰기'),
+                    React.createElement('button', {
+                        key: 'quit-button',
+                        onClick: onQuit,
+                        className: "touch-button bg-red-500 hover:bg-red-600 text-white border-0 text-sm px-4 py-2"
+                    }, '⏹️ 종료')
+                ])
             ]),
             
             // 진행률 바
             React.createElement('div', {
                 key: 'progress-container',
-                className: "w-full bg-white bg-opacity-30 rounded-full h-4"
+                className: "progress-bar"
             }, [
                 React.createElement('div', {
-                    key: 'progress-bar',
-                    className: "bg-gradient-to-r from-green-400 to-blue-500 h-4 rounded-full transition-all duration-500",
+                    key: 'progress-fill',
+                    className: "progress-fill",
                     style: { width: `${progress}%` }
                 })
             ]),
@@ -645,10 +654,10 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
             }, `진행률: ${Math.round(progress)}%`)
         ]),
         
-        // 문제 영역 (개선된 디자인)
+        // 문제 영역 (iPhone 최적화)
         React.createElement('div', {
             key: 'content',
-            className: "p-8"
+            className: "p-4 md:p-8"
         }, [
             // 주 문제 표시 (첫 번째 단계에만, 스타일 개선)
             stepIndex === 0 && React.createElement('div', {
@@ -693,31 +702,30 @@ function GamePage({ question, stepIndex, questionNumber, totalQuestions, score, 
                     }, currentStep.question)
                 ]),
                 
-                // 선택지 (개선된 그리드 레이아웃)
+                // 선택지 (iPhone 최적화)
                 React.createElement('div', {
                     key: 'options',
-                    className: "grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto"
+                    className: "space-y-3"
                 }, currentStep.options.map((option, index) => 
                     React.createElement('button', {
                         key: `option-${index}`,
                         onClick: () => !answered && setSelectedAnswer(index),
                         disabled: answered,
                         className: `
-                            relative p-6 text-lg font-semibold rounded-lg border-2 transition-all duration-300
+                            option-button relative
                             ${selectedAnswer === index 
                                 ? (answered
                                     ? (index === currentStep.correct 
-                                        ? 'bg-green-100 border-green-500 text-green-800 shadow-lg scale-105'
-                                        : 'bg-red-100 border-red-500 text-red-800 shadow-lg'
+                                        ? 'bg-green-500 border-green-500 text-white'
+                                        : 'bg-red-500 border-red-500 text-white'
                                     )
-                                    : 'bg-purple-100 border-purple-500 text-purple-800 shadow-lg scale-105'
+                                    : 'bg-purple-500 border-purple-500 text-white'
                                 )
                                 : (answered && index === currentStep.correct
-                                    ? 'bg-green-100 border-green-500 text-green-800 shadow-lg scale-105'
-                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300 hover:shadow-md'
+                                    ? 'bg-green-500 border-green-500 text-white'
+                                    : ''
                                 )
                             }
-                            ${answered ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
                         `
                     }, [
                         React.createElement('div', {
@@ -868,16 +876,31 @@ function App() {
             if (gameQuestions.length === 0) {
                 console.log('데이터베이스에서 문제를 찾을 수 없음, 메모리에서 가져오는 중...');
                 
-                let questionSource;
+                let questionSource = [];
                 switch(difficulty) {
                     case 'easy':
-                        questionSource = typeof easyQuestions !== 'undefined' ? easyQuestions : [];
+                        if (typeof easyQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...easyQuestions];
+                        }
+                        if (typeof easyNatureQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...easyNatureQuestions];
+                        }
                         break;
                     case 'medium':
-                        questionSource = typeof mediumQuestions !== 'undefined' ? mediumQuestions : [];
+                        if (typeof mediumQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...mediumQuestions];
+                        }
+                        if (typeof mediumNatureQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...mediumNatureQuestions];
+                        }
                         break;
                     case 'hard':
-                        questionSource = typeof hardQuestions !== 'undefined' ? hardQuestions : [];
+                        if (typeof hardQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...hardQuestions];
+                        }
+                        if (typeof hardNatureQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...hardNatureQuestions];
+                        }
                         break;
                     default:
                         questionSource = [];
@@ -1000,13 +1023,28 @@ function App() {
                 let questionSource = [];
                 switch(gameSession.difficulty) {
                     case 'easy':
-                        questionSource = typeof easyQuestions !== 'undefined' ? easyQuestions : [];
+                        if (typeof easyQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...easyQuestions];
+                        }
+                        if (typeof easyNatureQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...easyNatureQuestions];
+                        }
                         break;
                     case 'medium':
-                        questionSource = typeof mediumQuestions !== 'undefined' ? mediumQuestions : [];
+                        if (typeof mediumQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...mediumQuestions];
+                        }
+                        if (typeof mediumNatureQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...mediumNatureQuestions];
+                        }
                         break;
                     case 'hard':
-                        questionSource = typeof hardQuestions !== 'undefined' ? hardQuestions : [];
+                        if (typeof hardQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...hardQuestions];
+                        }
+                        if (typeof hardNatureQuestions !== 'undefined') {
+                            questionSource = [...questionSource, ...hardNatureQuestions];
+                        }
                         break;
                 }
                 
@@ -1129,15 +1167,15 @@ function App() {
     };
     
     return React.createElement('div', {
-        className: "min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500"
+        className: "min-h-screen bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 safe-area"
     }, [
         React.createElement('nav', {
             key: 'navigation',
-            className: "bg-white shadow-lg"
+            className: "iphone-navbar safe-area"
         }, [
             React.createElement('div', {
                 key: 'nav-content',
-                className: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+                className: "max-w-7xl mx-auto px-4"
             }, [
                 React.createElement('div', {
                     key: 'nav-flex',
@@ -1145,41 +1183,42 @@ function App() {
                 }, [
                     React.createElement('div', {
                         key: 'nav-left',
-                        className: "flex items-center"
+                        className: "flex items-center min-w-0 flex-1"
                     }, [
                         React.createElement('h1', {
                             key: 'nav-title',
-                            className: "text-2xl font-bold text-purple-600 cursor-pointer flex items-center space-x-2",
+                            className: "text-lg md:text-2xl font-bold text-purple-600 cursor-pointer flex items-center space-x-2 min-w-0",
                             onClick: () => setCurrentPage('home')
                         }, [
                             React.createElement('span', {
                                 key: 'nav-emoji',
-                                className: 'text-3xl'
+                                className: 'text-2xl md:text-3xl'
                             }, '🧠'),
                             React.createElement('span', {
-                                key: 'nav-text'
+                                key: 'nav-text',
+                                className: 'truncate'
                             }, '혜완이의 논리수학 퀴즈')
                         ])
                     ]),
                     React.createElement('div', {
                         key: 'nav-buttons',
-                        className: "flex items-center space-x-4"
+                        className: "flex items-center space-x-2"
                     }, [
                         React.createElement('button', {
                             key: 'scoreboard-nav',
                             onClick: () => setCurrentPage('scoreboard'),
-                            className: "bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                            className: "touch-button bg-blue-500 text-white border-0 px-3 py-2 text-sm flex items-center space-x-1"
                         }, [
                             React.createElement('span', { key: 'icon' }, '🏆'),
-                            React.createElement('span', { key: 'text' }, '순위표')
+                            React.createElement('span', { key: 'text', className: 'hidden sm:inline' }, '순위표')
                         ]),
                         React.createElement('button', {
                             key: 'admin-nav',
                             onClick: () => setCurrentPage('admin'),
-                            className: "bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center space-x-2"
+                            className: "touch-button bg-gray-500 text-white border-0 px-3 py-2 text-sm flex items-center space-x-1"
                         }, [
                             React.createElement('span', { key: 'icon' }, '⚙️'),
-                            React.createElement('span', { key: 'text' }, '관리')
+                            React.createElement('span', { key: 'text', className: 'hidden sm:inline' }, '관리')
                         ])
                     ])
                 ])
@@ -1188,7 +1227,7 @@ function App() {
         
         React.createElement('main', {
             key: 'main-content',
-            className: "container mx-auto px-4 py-8"
+            className: "container mx-auto px-4 py-4 md:py-8"
         }, renderPage())
     ]);
 }

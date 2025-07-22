@@ -17,17 +17,23 @@ function CompleteAdminPage({ database, onReturnHome }) {
         try {
             setLoading(true);
             
-            // 문제 데이터가 완전히 로드될 때까지 기다리기 (최대 3초)
+            // 문제 데이터가 완전히 로드될 때까지 기다리기 (최대 5초)
             let attempts = 0;
-            const maxAttempts = 30; // 3초 (100ms × 30)
+            const maxAttempts = 50; // 5초 (100ms × 50)
             
             while (attempts < maxAttempts) {
                 if (typeof easyQuestions !== 'undefined' && 
                     typeof mediumQuestions !== 'undefined' && 
                     typeof hardQuestions !== 'undefined' &&
+                    typeof easyNatureQuestions !== 'undefined' &&
+                    typeof mediumNatureQuestions !== 'undefined' &&
+                    typeof hardNatureQuestions !== 'undefined' &&
                     easyQuestions.length > 0 && 
                     mediumQuestions.length > 0 && 
-                    hardQuestions.length > 0) {
+                    hardQuestions.length > 0 &&
+                    easyNatureQuestions.length > 0 &&
+                    mediumNatureQuestions.length > 0 &&
+                    hardNatureQuestions.length > 0) {
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -81,34 +87,56 @@ function CompleteAdminPage({ database, onReturnHome }) {
                 setAppliances(appliancesData);
             }
             
-            // 문제 데이터 통계 - 정확한 개수 계산
+            // 문제 데이터 통계 - 정확한 개수 계산 (기존 + 자연 테마)
             let totalQuestions = 0;
             let easyCount = 0, mediumCount = 0, hardCount = 0;
             
-            // 각 난이도별로 50개씩 있어야 함
+            // 쉬움 문제 카운트 (기존 + 자연)
             if (typeof easyQuestions !== 'undefined' && easyQuestions.length > 0) {
-                easyCount = easyQuestions.length;
-                totalQuestions += easyCount;
-                console.log(`쉬움 문제: ${easyCount}개`);
+                easyCount += easyQuestions.length;
+                console.log(`기존 쉬움 문제: ${easyQuestions.length}개`);
             } else {
                 console.warn('easyQuestions가 로드되지 않았습니다.');
             }
             
+            if (typeof easyNatureQuestions !== 'undefined' && easyNatureQuestions.length > 0) {
+                easyCount += easyNatureQuestions.length;
+                console.log(`자연 쉬움 문제: ${easyNatureQuestions.length}개`);
+            } else {
+                console.warn('easyNatureQuestions가 로드되지 않았습니다.');
+            }
+            
+            // 보통 문제 카운트 (기존 + 자연)
             if (typeof mediumQuestions !== 'undefined' && mediumQuestions.length > 0) {
-                mediumCount = mediumQuestions.length;
-                totalQuestions += mediumCount;
-                console.log(`보통 문제: ${mediumCount}개`);
+                mediumCount += mediumQuestions.length;
+                console.log(`기존 보통 문제: ${mediumQuestions.length}개`);
             } else {
                 console.warn('mediumQuestions가 로드되지 않았습니다.');
             }
             
+            if (typeof mediumNatureQuestions !== 'undefined' && mediumNatureQuestions.length > 0) {
+                mediumCount += mediumNatureQuestions.length;
+                console.log(`자연 보통 문제: ${mediumNatureQuestions.length}개`);
+            } else {
+                console.warn('mediumNatureQuestions가 로드되지 않았습니다.');
+            }
+            
+            // 어려움 문제 카운트 (기존 + 자연)
             if (typeof hardQuestions !== 'undefined' && hardQuestions.length > 0) {
-                hardCount = hardQuestions.length;
-                totalQuestions += hardCount;
-                console.log(`어려움 문제: ${hardCount}개`);
+                hardCount += hardQuestions.length;
+                console.log(`기존 어려움 문제: ${hardQuestions.length}개`);
             } else {
                 console.warn('hardQuestions가 로드되지 않았습니다.');
             }
+            
+            if (typeof hardNatureQuestions !== 'undefined' && hardNatureQuestions.length > 0) {
+                hardCount += hardNatureQuestions.length;
+                console.log(`자연 어려움 문제: ${hardNatureQuestions.length}개`);
+            } else {
+                console.warn('hardNatureQuestions가 로드되지 않았습니다.');
+            }
+            
+            totalQuestions = easyCount + mediumCount + hardCount;
             
             console.log(`총 문제 개수: ${totalQuestions}개`);
             
