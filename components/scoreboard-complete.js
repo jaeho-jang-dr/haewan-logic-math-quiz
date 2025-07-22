@@ -43,9 +43,9 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
     };
 
     const getRankChangeIcon = (change) => {
-        if (change > 0) return <span className="text-green-500">⬆️ +{change}</span>;
-        if (change < 0) return <span className="text-red-500">⬇️ {change}</span>;
-        return <span className="text-gray-500">➖ 0</span>;
+        if (change > 0) return React.createElement('span', { className: 'text-green-500' }, `⬆️ +${change}`);
+        if (change < 0) return React.createElement('span', { className: 'text-red-500' }, `⬇️ ${change}`);
+        return React.createElement('span', { className: 'text-gray-500' }, '➖ 0');
     };
 
     const formatDate = (dateString) => {

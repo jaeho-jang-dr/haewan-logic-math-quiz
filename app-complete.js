@@ -145,7 +145,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                         React.createElement('label', {
                             key: 'education-label',
                             className: "block text-sm font-medium text-gray-700 mb-2"
-                        }, '🎓 학력을 선택해주세요'),
+                        }, '🎓 학년을 선택해주세요'),
                         React.createElement('select', {
                             key: 'education-select',
                             value: education,
@@ -156,7 +156,7 @@ function HomePage({ onUserSubmit, onStartGame, database }) {
                             React.createElement('option', {
                                 key: 'default-option',
                                 value: ""
-                            }, '학력을 선택하세요'),
+                            }, '학년을 선택하세요'),
                             ...educationOptions.map(option => 
                                 React.createElement('option', {
                                     key: option.value,
