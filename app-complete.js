@@ -2,7 +2,7 @@
 const { useState, useEffect } = React;
 
 // 홈페이지 컴포넌트 (개선된 버전)
-function HomePage({ onUserSubmit, onStartGame, database, onNavigateToAppliances, userApplianceCount }) {
+function HomePage({ onUserSubmit, onStartGame, database, onNavigateToTreasures, userTreasureCount }) {
     const [name, setName] = useState('');
     const [education, setEducation] = useState('');
     const [user, setUser] = useState(null);
@@ -394,33 +394,33 @@ function HomePage({ onUserSubmit, onStartGame, database, onNavigateToAppliances,
             ])
         ]),
         
-        // 가전제품 컬렉션 접근 버튼
+        // 보물 컬렉션 접근 버튼
         React.createElement('div', {
-            key: 'appliance-section',
+            key: 'treasure-section',
             className: "mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-100 rounded-lg border-2 border-purple-200"
         }, [
             React.createElement('div', {
-                key: 'appliance-header',
+                key: 'treasure-header',
                 className: "text-center mb-4"
             }, [
                 React.createElement('div', {
-                    key: 'appliance-icon',
+                    key: 'treasure-icon',
                     className: "text-4xl mb-2"
                 }, '🏠'),
                 React.createElement('h3', {
-                    key: 'appliance-title',
+                    key: 'treasure-title',
                     className: "text-lg font-bold text-purple-800 mb-2"
-                }, '나의 가전제품 컬렉션'),
+                }, '나의 보물 컬렉션'),
                 React.createElement('p', {
-                    key: 'appliance-desc',
+                    key: 'treasure-desc',
                     className: "text-sm text-purple-600"
-                }, `수집한 가전제품: ${userApplianceCount}개`)
+                }, `수집한 보물: ${userTreasureCount}개`)
             ]),
             React.createElement('button', {
-                key: 'view-appliances-button',
-                onClick: onNavigateToAppliances,
+                key: 'view-treasures-button',
+                onClick: onNavigateToTreasures,
                 className: "touch-button w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
-            }, '🏠 가전제품 컬렉션 보기')
+            }, '💎 보물 컬렉션 보기')
         ]),
         
         React.createElement('div', {
@@ -544,23 +544,23 @@ function ResultPage({ score, totalQuestions, answers, onReturnHome, onViewScoreb
                 className: "text-2xl font-bold text-yellow-800 mb-3"
             }, '🏆 세션 완료 보상! 🏆'),
             React.createElement('div', {
-                key: 'reward-appliance',
+                key: 'reward-treasure',
                 className: "flex items-center justify-center space-x-4 p-4 bg-white rounded-lg"
             }, [
                 React.createElement('div', {
-                    key: 'appliance-icon',
+                    key: 'treasure-icon',
                     className: "text-5xl"
                 }, sessionReward.emoji || '🏠'),
                 React.createElement('div', {
-                    key: 'appliance-info',
+                    key: 'treasure-info',
                     className: "text-left"
                 }, [
                     React.createElement('h4', {
-                        key: 'appliance-name',
+                        key: 'treasure-name',
                         className: "text-xl font-bold text-gray-800"
                     }, sessionReward.name),
                     React.createElement('p', {
-                        key: 'appliance-brand',
+                        key: 'treasure-brand',
                         className: "text-gray-600"
                     }, `${sessionReward.brand} - ${sessionReward.category}`)
                 ])
@@ -948,13 +948,17 @@ function App() {
     const [score, setScore] = useState(0);
     const [answers, setAnswers] = useState([]);
     const [skipUsed, setSkipUsed] = useState(false); // 문제 건너뛰기 사용 여부
-    const [userApplianceCount, setUserApplianceCount] = useState(0);
-    const [newApplianceEarned, setNewApplianceEarned] = useState(null);
+    const [userTreasureCount, setUserTreasureCount] = useState(0);
+    const [newTreasureEarned, setNewTreasureEarned] = useState(null);
     const [sessionCompletedQuestions, setSessionCompletedQuestions] = useState(0);
-    const [sessionApplianceAwarded, setSessionApplianceAwarded] = useState(false);
+    const [sessionCorrectQuestions, setSessionCorrectQuestions] = useState(0); // 정답 맞춘 문제 수
+    const [sessionTreasureAwarded, setSessionTreasureAwarded] = useState(false);
     const [sessionReward, setSessionReward] = useState(null);
     const [playerELO, setPlayerELO] = useState(1200); // 기본 ELO 점수
     const [totalScore, setTotalScore] = useState(0); // 누적 점수
+    const [currentQuestionCorrect, setCurrentQuestionCorrect] = useState(false); // 현재 문제 정답 여부
+    const [showFanfare, setShowFanfare] = useState(false); // 빵파레 효과 표시 여부
+    const [fanfareTreasure, setFanfareTreasure] = useState(null); // 빵파레에서 표시할 보물
     
     useEffect(() => {
         initializeApp();
@@ -962,18 +966,18 @@ function App() {
 
     useEffect(() => {
         if (user && database) {
-            loadUserApplianceCount();
+            loadUserTreasureCount();
         }
     }, [user, database]);
     
-    const loadUserApplianceCount = async () => {
+    const loadUserTreasureCount = async () => {
         try {
             if (user && database) {
-                const count = await database.getUserApplianceCount(user.id);
-                setUserApplianceCount(count);
+                const count = await database.getUserTreasureCount(user.id);
+                setUserTreasureCount(count);
             }
         } catch (error) {
-            console.error('가전제품 수 로드 중 오류:', error);
+            console.error('보물 수 로드 중 오류:', error);
         }
     };
 
@@ -1024,48 +1028,45 @@ function App() {
         return Math.min(complexity, 1.0);
     };
 
-    const awardRandomAppliance = async (isSessionReward = false) => {
+    const awardRandomTreasure = async (isSessionReward = false) => {
         try {
             if (!user || !database) return null;
             
-            // 전체 가전제품 목록에서 랜덤 선택
-            let allAppliances = [];
-            if (typeof appliancesData !== 'undefined') {
-                allAppliances = [...allAppliances, ...appliancesData];
-            }
-            if (typeof enhancedAppliancesData !== 'undefined') {
-                allAppliances = [...allAppliances, ...enhancedAppliancesData];
+            // 전체 보물 목록에서 랜덤 선택
+            let allTreasures = [];
+            if (typeof treasuresDatabase !== 'undefined') {
+                allTreasures = [...allTreasures, ...treasuresDatabase];
             }
             
-            if (allAppliances.length === 0) return null;
+            if (allTreasures.length === 0) return null;
             
-            const randomAppliance = allAppliances[Math.floor(Math.random() * allAppliances.length)];
+            const randomTreasure = allTreasures[Math.floor(Math.random() * allTreasures.length)];
             
             // 중복 수집 허용 - 사용자 요청사항
             
-            // 가전제품 추가
-            await database.addApplianceToUser(user.id, randomAppliance.id);
+            // 보물 추가
+            await database.addTreasureToUser(user.id, randomTreasure.id);
             
-            // 가전제품 수 업데이트
-            loadUserApplianceCount();
+            // 보물 수 업데이트
+            loadUserTreasureCount();
             
             if (isSessionReward) {
                 // 세션 완료 보상으로 설정
-                setSessionReward(randomAppliance);
+                setSessionReward(randomTreasure);
             } else {
-                // 일반 획득한 가전제품 정보 설정
-                setNewApplianceEarned(randomAppliance);
+                // 일반 획득한 보물 정보 설정
+                setNewTreasureEarned(randomTreasure);
                 
                 // 3초 후 팝업 자동 닫기
                 setTimeout(() => {
-                    setNewApplianceEarned(null);
+                    setNewTreasureEarned(null);
                 }, 3000);
             }
             
-            return randomAppliance;
+            return randomTreasure;
             
         } catch (error) {
-            console.error('가전제품 획득 중 오류:', error);
+            console.error('보물 획득 중 오류:', error);
             return null;
         }
     };
@@ -1112,14 +1113,16 @@ function App() {
             
             // 세션 상태 초기화
             setSessionCompletedQuestions(0);
-            setSessionApplianceAwarded(false);
+            setSessionCorrectQuestions(0);
+            setSessionTreasureAwarded(false);
             setSessionReward(null);
+            setCurrentQuestionCorrect(false);
             
             // 해당 난이도의 문제 가져오기 (한 세션에 3문제로 제한)
             let gameQuestions = await database.getQuestionsByDifficulty(difficulty, 3);
             
-            // 데이터베이스에서 문제를 가져올 수 없으면 메모리에서 가져오기
-            if (gameQuestions.length === 0) {
+            // 데이터베이스에서 3문제를 가져올 수 없으면 메모리에서 가져오기
+            if (gameQuestions.length < 3) {
                 console.log('데이터베이스에서 문제를 찾을 수 없음, 메모리에서 가져오는 중...');
                 
                 let questionSource = [];
@@ -1153,25 +1156,42 @@ function App() {
                 }
                 
                 if (questionSource.length > 0) {
+                    // 최소 3문제 보장
+                    if (questionSource.length < 3) {
+                        alert('충분한 문제가 없습니다. 페이지를 새로고침해 보세요.');
+                        return;
+                    }
+                    
                     // 4-5단계 힌트 문제를 최소 하나 포함시키기
                     const multiStepQuestions = questionSource.filter(q => q.steps && q.steps.length >= 4);
                     const otherQuestions = questionSource.filter(q => !q.steps || q.steps.length < 4);
                     
                     let finalQuestionsList = [];
                     
-                    // 4-5단계 문제 최소 1개 포함
+                    // 4-5단계 문제 최소 1개 포함 (있는 경우에만)
                     if (multiStepQuestions.length > 0) {
-                        finalQuestionsList.push(multiStepQuestions[Math.floor(Math.random() * multiStepQuestions.length)]);
+                        const selectedMultiStep = multiStepQuestions[Math.floor(Math.random() * multiStepQuestions.length)];
+                        finalQuestionsList.push(selectedMultiStep);
+                        
+                        // 나머지 2개 문제는 전체에서 랜덤 선택 (중복 방지)
+                        const remainingQuestions = questionSource.filter(q => q !== selectedMultiStep);
+                        const shuffled = remainingQuestions.sort(() => Math.random() - 0.5);
+                        finalQuestionsList = [...finalQuestionsList, ...shuffled.slice(0, 2)];
+                    } else {
+                        // 4-5단계 문제가 없으면 전체에서 3개 랜덤 선택
+                        const shuffled = questionSource.sort(() => Math.random() - 0.5);
+                        finalQuestionsList = shuffled.slice(0, 3);
                     }
-                    
-                    // 나머지 2개 문제 랜덤 선택
-                    const remainingQuestions = questionSource.filter(q => !finalQuestionsList.includes(q));
-                    const shuffled = remainingQuestions.sort(() => Math.random() - 0.5);
-                    finalQuestionsList = [...finalQuestionsList, ...shuffled.slice(0, 2)];
                     
                     // 최종 섞기
                     gameQuestions = finalQuestionsList.sort(() => Math.random() - 0.5);
-                    console.log(`메모리에서 ${gameQuestions.length}개 문제 로드됨 (4-5단계 힌트 문제 포함)`);
+                    console.log(`메모리에서 ${gameQuestions.length}개 문제 로드됨`);
+                    
+                    // 3문제가 없으면 에러
+                    if (gameQuestions.length < 3) {
+                        alert('3문제를 불러올 수 없습니다. 페이지를 새로고침해 보세요.');
+                        return;
+                    }
                 } else {
                     alert('문제를 불러올 수 없습니다. 페이지를 새로고침해 보세요.');
                     return;
@@ -1196,7 +1216,7 @@ function App() {
         }
     };
     
-    const submitAnswer = (selectedAnswer, timeSpent = 15) => {
+    const submitAnswer = async (selectedAnswer, timeSpent = 15) => {
         const currentQuestion = questions[currentQuestionIndex];
         const currentStep = currentQuestion.steps[currentStepIndex];
         const isCorrect = selectedAnswer === currentStep.correct;
@@ -1243,26 +1263,68 @@ function App() {
         if (isCorrect) {
             setScore(prev => prev + baseScore);
             setTotalScore(prev => prev + baseScore); // 누적 점수에도 추가
-            
-            // 세션 완료 문제 수 증가
-            const newCompletedCount = sessionCompletedQuestions + 1;
-            setSessionCompletedQuestions(newCompletedCount);
-            
-            // 3문제 완료시 가전제품 확정 지급 체크
-            if (newCompletedCount >= 3 && !sessionApplianceAwarded) {
-                // 세션 완료 보상으로 가전제품 지급
-                awardRandomAppliance(true);
-                setSessionApplianceAwarded(true);
-            }
+            setCurrentQuestionCorrect(true); // 현재 문제에서 정답 맞춤
         }
         
         // 다음 단계 또는 다음 문제로 이동
         if (currentStepIndex < currentQuestion.steps.length - 1) {
+            // 다음 단계로 이동
             setCurrentStepIndex(prev => prev + 1);
         } else if (currentQuestionIndex < questions.length - 1) {
+            // 다음 문제로 이동 (현재 문제 완료)
+            const newCompletedCount = sessionCompletedQuestions + 1;
+            setSessionCompletedQuestions(newCompletedCount);
+            
+            // 현재 문제에서 정답을 맞췄는지 확인
+            let newCorrectCount = sessionCorrectQuestions;
+            if (currentQuestionCorrect) {
+                newCorrectCount = sessionCorrectQuestions + 1;
+                setSessionCorrectQuestions(newCorrectCount);
+            }
+            
+            console.log(`문제 ${newCompletedCount} 완료! 정답 수: ${newCorrectCount}/3`);
+            
+            // 다음 문제로 이동
             setCurrentQuestionIndex(prev => prev + 1);
             setCurrentStepIndex(0);
+            setCurrentQuestionCorrect(false); // 새 문제 시작
+            
         } else {
+            // 마지막 문제도 완료된 경우
+            const newCompletedCount = sessionCompletedQuestions + 1;
+            setSessionCompletedQuestions(newCompletedCount);
+            
+            // 마지막 문제에서 정답을 맞췄는지 확인
+            let newCorrectCount = sessionCorrectQuestions;
+            if (currentQuestionCorrect) {
+                newCorrectCount = sessionCorrectQuestions + 1;
+                setSessionCorrectQuestions(newCorrectCount);
+            }
+            
+            console.log(`모든 문제 완료! 총 정답 수: ${newCorrectCount}/3`);
+            
+            // 3문제 전부 정답인 경우에만 보물 지급
+            if (newCorrectCount === 3 && !sessionTreasureAwarded) {
+                console.log('🎉 3문제 전부 정답! 보물 지급!');
+                // 빵파레 효과와 함께 보물 지급
+                const awardedTreasure = await awardRandomTreasure(true);
+                setSessionTreasureAwarded(true);
+                
+                // 빵파레 효과 시작
+                if (awardedTreasure) {
+                    setShowFanfare(true);
+                    setFanfareTreasure(awardedTreasure);
+                    
+                    // 5초 후 빵파레 효과 종료
+                    setTimeout(() => {
+                        setShowFanfare(false);
+                        setFanfareTreasure(null);
+                    }, 5000);
+                }
+            } else {
+                console.log(`정답 수가 부족합니다: ${newCorrectCount}/3`);
+            }
+            
             // 게임 종료
             endGame();
         }
@@ -1398,8 +1460,8 @@ function App() {
                     onUserSubmit: setUser, 
                     onStartGame: startGame,
                     database: database,
-                    onNavigateToAppliances: () => setCurrentPage('appliances'),
-                    userApplianceCount: userApplianceCount
+                    onNavigateToTreasures: () => setCurrentPage('treasures'),
+                    userTreasureCount: userTreasureCount
                 });
             case 'game':
                 return React.createElement(GamePage, {
@@ -1475,10 +1537,10 @@ function App() {
                         }, '홈으로')
                     ]);
                 }
-            case 'appliances':
-                // 가전제품 컬렉션 페이지
-                if (typeof ApplianceCollectionPage !== 'undefined') {
-                    return React.createElement(ApplianceCollectionPage, {
+            case 'treasures':
+                // 보물 컬렉션 페이지
+                if (typeof TreasureCollectionPage !== 'undefined') {
+                    return React.createElement(TreasureCollectionPage, {
                         database: database,
                         user: user,
                         onReturnHome: () => setCurrentPage('home')
@@ -1490,11 +1552,11 @@ function App() {
                         React.createElement('h2', {
                             key: 'title',
                             className: 'text-3xl font-bold mb-8'
-                        }, '🏠 가전제품 컬렉션'),
+                        }, '🏠 보물 컬렉션'),
                         React.createElement('p', {
                             key: 'message',
                             className: 'text-xl text-gray-600 mb-8'
-                        }, '가전제품 컬렉션을 불러오는 중...'),
+                        }, '보물 컬렉션을 불러오는 중...'),
                         React.createElement('button', {
                             key: 'home-button',
                             onClick: () => setCurrentPage('home'),
@@ -1550,12 +1612,12 @@ function App() {
                         className: "flex items-center space-x-2"
                     }, [
                         user && React.createElement('button', {
-                            key: 'appliance-count',
-                            onClick: () => setCurrentPage('appliances'),
+                            key: 'treasure-count',
+                            onClick: () => setCurrentPage('treasures'),
                             className: "touch-button bg-green-500 text-white border-0 px-3 py-2 text-sm flex items-center space-x-1"
                         }, [
                             React.createElement('span', { key: 'icon' }, '🏠'),
-                            React.createElement('span', { key: 'count' }, userApplianceCount),
+                            React.createElement('span', { key: 'count' }, userTreasureCount),
                             React.createElement('span', { key: 'text', className: 'hidden sm:inline' }, '가전')
                         ]),
                         React.createElement('button', {
@@ -1584,9 +1646,9 @@ function App() {
             className: "container mx-auto px-4 py-4 md:py-8"
         }, renderPage()),
         
-        // 가전제품 획득 팝업
-        newApplianceEarned && React.createElement('div', {
-            key: 'appliance-popup',
+        // 보물 획득 팝업
+        newTreasureEarned && React.createElement('div', {
+            key: 'treasure-popup',
             className: "iphone-modal"
         }, [
             React.createElement('div', {
@@ -1600,37 +1662,129 @@ function App() {
                 React.createElement('h3', {
                     key: 'title',
                     className: "text-2xl font-bold text-green-600 mb-2"
-                }, '새 가전제품 획득!'),
+                }, '새 보물 획득!'),
                 React.createElement('div', {
-                    key: 'appliance-info',
+                    key: 'treasure-info',
                     className: "bg-gradient-to-r from-green-50 to-emerald-100 p-6 rounded-lg border-2 border-green-200 mb-4"
                 }, [
                     React.createElement('div', {
-                        key: 'appliance-emoji',
+                        key: 'treasure-emoji',
                         className: "text-4xl mb-2"
-                    }, newApplianceEarned.emoji || '🏠'),
+                    }, newTreasureEarned.emoji || '🏠'),
                     React.createElement('div', {
-                        key: 'appliance-name',
+                        key: 'treasure-name',
                         className: "text-xl font-bold text-gray-800 mb-1"
-                    }, newApplianceEarned.name),
+                    }, newTreasureEarned.name),
                     React.createElement('div', {
-                        key: 'appliance-brand',
+                        key: 'treasure-brand',
                         className: "text-sm text-gray-600"
-                    }, `${newApplianceEarned.brand} - ${newApplianceEarned.category}`)
+                    }, `${newTreasureEarned.brand} - ${newTreasureEarned.category}`)
                 ]),
                 React.createElement('div', {
                     key: 'collection-info',
                     className: "text-lg text-gray-700 mb-4"
-                }, `총 수집한 가전제품: ${userApplianceCount}개`),
+                }, `총 수집한 보물: ${userTreasureCount}개`),
                 React.createElement('button', {
                     key: 'close-button',
-                    onClick: () => setNewApplianceEarned(null),
+                    onClick: () => setNewTreasureEarned(null),
                     className: "touch-button w-full bg-green-500 hover:bg-green-600 text-white border-0"
                 }, '확인')
+            ])
+        ]),
+        
+        // 빵파레 효과 (3문제 전부 정답시)
+        showFanfare && fanfareTreasure && React.createElement('div', {
+            key: 'fanfare-overlay',
+            className: "fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center"
+        }, [
+            React.createElement('div', {
+                key: 'fanfare-content',
+                className: "relative bg-white rounded-lg p-8 max-w-sm mx-4 text-center transform animate-bounceIn"
+            }, [
+                // 축하 문구
+                React.createElement('div', {
+                    key: 'fanfare-title',
+                    className: "text-4xl font-bold text-yellow-600 mb-4 animate-pulse"
+                }, '🎊 완벽한 성과! 🎊'),
+                
+                React.createElement('div', {
+                    key: 'fanfare-subtitle',
+                    className: "text-xl text-green-600 font-bold mb-6"
+                }, '3문제 전부 정답! 특별 상품 획득!'),
+                
+                // 상품 표시
+                React.createElement('div', {
+                    key: 'fanfare-treasure',
+                    className: "bg-gradient-to-r from-yellow-100 to-orange-100 p-6 rounded-lg border-4 border-yellow-300 mb-4 relative overflow-hidden"
+                }, [
+                    // 반짝임 효과
+                    React.createElement('div', {
+                        key: 'sparkle-1',
+                        className: "absolute top-2 left-2 text-2xl animate-ping"
+                    }, '✨'),
+                    React.createElement('div', {
+                        key: 'sparkle-2',
+                        className: "absolute top-2 right-2 text-2xl animate-ping",
+                        style: { animationDelay: '0.5s' }
+                    }, '⭐'),
+                    React.createElement('div', {
+                        key: 'sparkle-3',
+                        className: "absolute bottom-2 left-2 text-2xl animate-ping",
+                        style: { animationDelay: '1s' }
+                    }, '🌟'),
+                    React.createElement('div', {
+                        key: 'sparkle-4',
+                        className: "absolute bottom-2 right-2 text-2xl animate-ping",
+                        style: { animationDelay: '1.5s' }
+                    }, '💫'),
+                    
+                    // 상품 정보
+                    React.createElement('div', {
+                        key: 'treasure-emoji',
+                        className: "text-6xl mb-3 animate-bounce"
+                    }, fanfareTreasure.emoji || '🏠'),
+                    React.createElement('div', {
+                        key: 'treasure-name',
+                        className: "text-2xl font-bold text-gray-800 mb-2"
+                    }, fanfareTreasure.name),
+                    React.createElement('div', {
+                        key: 'treasure-brand',
+                        className: "text-lg text-gray-600"
+                    }, `${fanfareTreasure.brand} - ${fanfareTreasure.category}`)
+                ]),
+                
+                // 축하 메시지
+                React.createElement('div', {
+                    key: 'fanfare-message',
+                    className: "text-lg text-purple-600 font-semibold mb-4"
+                }, '🎉 빵파레! 놀라운 실력입니다! 🎉'),
+                
+                React.createElement('div', {
+                    key: 'fanfare-timer',
+                    className: "text-sm text-gray-500 mb-4"
+                }, '잠시 후 자동으로 닫힙니다...'),
+                
+                React.createElement('button', {
+                    key: 'fanfare-close',
+                    onClick: () => {
+                        setShowFanfare(false);
+                        setFanfareTreasure(null);
+                    },
+                    className: "touch-button bg-yellow-500 hover:bg-yellow-600 text-white border-0 px-6 py-2 text-lg font-bold"
+                }, '🎊 멋져요!')
             ])
         ])
     ]);
 }
 
-// 앱 렌더링
-ReactDOM.render(React.createElement(App), document.getElementById('root'));
+// 앱 렌더링 - DOM과 React가 모두 로드된 후 실행
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    });
+} else {
+    // DOM이 이미 로드된 경우
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(App));
+}

@@ -19,7 +19,27 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
             // 실제 데이터베이스에서 점수 가져오기
             if (database) {
                 const topScores = await database.getTopScores(25);
-                setScores(topScores);
+                
+                // 각 플레이어의 보물 정보 추가
+                const scoresWithTreasures = await Promise.all(topScores.map(async (score) => {
+                    try {
+                        const treasureCount = await database.getUserTreasureCount(score.userId);
+                        const treasureValue = await database.getUserTreasureValue(score.userId);
+                        return {
+                            ...score,
+                            treasureCount,
+                            treasureValue
+                        };
+                    } catch (error) {
+                        return {
+                            ...score,
+                            treasureCount: 0,
+                            treasureValue: 0
+                        };
+                    }
+                }));
+                
+                setScores(scoresWithTreasures);
             }
 
             // 가상의 플레이어 데이터와 실제 데이터 병합
@@ -132,6 +152,10 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                         }`
                     }, `${player.totalScore.toLocaleString()}점`),
                     React.createElement('div', {
+                        key: 'treasures',
+                        className: 'text-sm text-purple-600 font-medium'
+                    }, player.treasureCount ? `💎 ${player.treasureCount}개 보물` : ''),
+                    React.createElement('div', {
                         key: 'grade',
                         className: 'text-sm text-gray-600'
                     }, `${player.grade} • ${player.school}`)
@@ -215,6 +239,17 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                             key: 'total-score',
                             className: 'text-2xl font-bold text-purple-600'
                         }, `${player.totalScore.toLocaleString()}점`),
+                        player.treasureCount > 0 && React.createElement('div', {
+                            key: 'treasure-info',
+                            className: 'text-sm font-medium text-purple-600 mt-1'
+                        }, [
+                            React.createElement('span', {key: 'icon'}, '💎 '),
+                            React.createElement('span', {key: 'count'}, `${player.treasureCount}개`),
+                            player.treasureValue > 0 && React.createElement('span', {
+                                key: 'value',
+                                className: 'ml-2 text-green-600'
+                            }, `(₩${player.treasureValue.toLocaleString()})`)
+                        ]),
                         React.createElement('div', {
                             key: 'details-right',
                             className: 'text-sm text-gray-500 flex items-center justify-end space-x-2'

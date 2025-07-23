@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>논리수학 퀴즈 - 디버그</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .status {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+        #console {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>논리수학 퀴즈 - 디버그 콘솔</h1>
+    <div id="status"></div>
+    <div id="console"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const consoleDiv = document.getElementById('console');
+        
+        function log(message, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            consoleDiv.innerHTML += `[${time}] ${type.toUpperCase()}: ${message}\n`;
+            console.log(message);
+        }
+        
+        // 오류 캐처
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            log(`Error: ${msg}\nFile: ${url}\nLine: ${lineNo}:${columnNo}`, 'error');
+            return false;
+        };
+        
+        // React 로드 확인
+        log('디버그 시작...');
+        
+        // 스크립트 동적 로드 및 확인
+        const scripts = [
+            { src: "https://unpkg.com/react@18/umd/react.development.js", name: "React" },
+            { src: "https://unpkg.com/react-dom@18/umd/react-dom.development.js", name: "ReactDOM" },
+            { src: "https://unpkg.com/@babel/standalone/babel.min.js", name: "Babel" },
+            { src: "js/database.js", name: "Database" },
+            { src: "data/questions/easy-questions.js?v=3", name: "Easy Questions" },
+            { src: "data/questions/medium-questions.js?v=3", name: "Medium Questions" },
+            { src: "data/questions/hard-questions.js?v=3", name: "Hard Questions" },
+            { src: "data/appliances/appliances-db.js?v=3", name: "Appliances DB" },
+            { src: "components/scoreboard-complete.js?v=5", name: "Scoreboard" },
+            { src: "components/admin-complete.js?v=6", name: "Admin" },
+            { src: "components/appliance-collection.js?v=1", name: "Appliance Collection" },
+            { src: "app-complete.js?v=5", name: "Main App" }
+        ];
+        
+        async function loadScript(script) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = script.src;
+                s.onload = () => {
+                    log(`✓ ${script.name} 로드 완료`, 'success');
+                    resolve();
+                };
+                s.onerror = () => {
+                    log(`✗ ${script.name} 로드 실패: ${script.src}`, 'error');
+                    reject(new Error(`Failed to load ${script.name}`));
+                };
+                document.head.appendChild(s);
+            });
+        }
+        
+        async function loadAllScripts() {
+            for (const script of scripts) {
+                try {
+                    await loadScript(script);
+                } catch (error) {
+                    log(`스크립트 로드 중 오류 발생: ${error.message}`, 'error');
+                }
+            }
+            
+            // 글로벌 변수 확인
+            setTimeout(() => {
+                log('\n=== 글로벌 변수 확인 ===');
+                log(`React: ${typeof React !== 'undefined' ? '✓' : '✗'}`);
+                log(`ReactDOM: ${typeof ReactDOM !== 'undefined' ? '✓' : '✗'}`);
+                log(`Babel: ${typeof Babel !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.easyQuestions: ${typeof window.easyQuestions !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.mediumQuestions: ${typeof window.mediumQuestions !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.hardQuestions: ${typeof window.hardQuestions !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.appliancesDB: ${typeof window.appliancesDB !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.ScoreboardComplete: ${typeof window.ScoreboardComplete !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.AdminComplete: ${typeof window.AdminComplete !== 'undefined' ? '✓' : '✗'}`);
+                log(`window.ApplianceCollection: ${typeof window.ApplianceCollection !== 'undefined' ? '✓' : '✗'}`);
+                
+                // 메인 앱 실행
+                if (typeof window.React !== 'undefined' && typeof window.ReactDOM !== 'undefined') {
+                    log('\n앱을 시작합니다...');
+                    const root = document.createElement('div');
+                    root.id = 'root';
+                    document.body.appendChild(root);
+                    
+                    // app-complete.js가 자동으로 실행되어야 함
+                }
+            }, 1000);
+        }
+        
+        loadAllScripts();
+    </script>
+</body>
+</html>

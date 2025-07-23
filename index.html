@@ -341,6 +341,37 @@
                 transform: scale(1);
             }
         }
+        
+        .animate-bounceIn {
+            animation: bounceIn 0.6s ease-out;
+        }
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .animate-ping {
+            animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -359,17 +390,26 @@
     <script src="data/questions/medium-nature-questions.js?v=1"></script>
     <script src="data/questions/hard-nature-questions.js?v=1"></script>
     
-    <!-- 가전제품 데이터 -->
-    <script src="data/appliances/appliances-db.js?v=3"></script>
-    <script src="data/appliances/appliances-enhanced.js?v=1"></script>
+    <!-- 재미있는 이야기 테마 문제 -->
+    <script src="data/questions/easy-fun-questions.js?v=1"></script>
+    <script src="data/questions/medium-fun-questions.js?v=1"></script>
+    <script src="data/questions/hard-fun-questions.js?v=1"></script>
+    
+    <!-- 보물 데이터 -->
+    <script src="data/treasures/treasures-database.js?v=1"></script>
+    <script src="data/treasures/fans-database.js?v=1"></script>
     
     <!-- 플레이어 데이터 -->
     <script src="data/players/players-db.js?v=3"></script>
     
+    <!-- 데이터 로더 -->
+    <script src="js/load-questions.js?v=4"></script>
+    <script src="js/load-treasures.js?v=1"></script>
+    
     <!-- 완전한 컴포넌트들 -->
     <script src="components/scoreboard-complete.js?v=5"></script>
-    <script src="components/admin-complete.js?v=6"></script>
-    <script src="components/appliance-collection.js?v=1"></script>
+    <script src="components/admin-complete.js?v=8"></script>
+    <script src="components/treasure-collection.js?v=1"></script>
     
     <!-- 메인 애플리케이션 -->
     <script src="app-complete.js?v=5"></script>

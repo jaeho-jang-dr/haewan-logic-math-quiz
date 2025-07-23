@@ -1,42 +1,40 @@
-// 가전제품 컬렉션 페이지 컴포넌트
-function ApplianceCollectionPage({ database, user, onReturnHome }) {
-    const [userAppliances, setUserAppliances] = useState([]);
-    const [allAppliances, setAllAppliances] = useState([]);
-    const [selectedAppliance, setSelectedAppliance] = useState(null);
+// 보물 컬렉션 페이지 컴포넌트
+function TreasureCollectionPage({ database, user, onReturnHome }) {
+    const [userTreasures, setUserTreasures] = useState([]);
+    const [allTreasures, setAllTreasures] = useState([]);
+    const [selectedTreasure, setSelectedTreasure] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [totalValue, setTotalValue] = useState(0);
 
     useEffect(() => {
-        loadApplianceData();
+        loadTreasureData();
     }, [database, user]);
 
-    const loadApplianceData = async () => {
+    const loadTreasureData = async () => {
         try {
             setLoading(true);
             
             if (!user || !database) return;
 
-            // 사용자가 수집한 가전제품 ID 목록
-            const userApplianceRecords = await database.getUserAppliances(user.id);
-            const userApplianceIds = userApplianceRecords.map(record => record.applianceId);
+            // 사용자가 수집한 보물 ID 목록
+            const userTreasureRecords = await database.getUserTreasures(user.id);
+            const userTreasureIds = userTreasureRecords.map(record => record.treasureId);
 
-            // 전체 가전제품 목록
-            let allAppliancesList = [];
-            if (typeof appliancesData !== 'undefined') {
-                allAppliancesList = [...allAppliancesList, ...appliancesData];
-            }
-            if (typeof enhancedAppliancesData !== 'undefined') {
-                allAppliancesList = [...allAppliancesList, ...enhancedAppliancesData];
+            // 전체 보물 목록
+            let allTreasuresList = [];
+            if (typeof treasuresDatabase !== 'undefined') {
+                allTreasuresList = [...allTreasuresList, ...treasuresDatabase];
             }
 
             // 수집 여부 및 히스토리 정보 추가
-            const appliancesWithCollection = allAppliancesList.map(appliance => {
-                const collectionRecords = userApplianceRecords.filter(record => record.applianceId === appliance.id);
+            const treasuresWithCollection = allTreasuresList.map(treasure => {
+                const collectionRecords = userTreasureRecords.filter(record => record.treasureId === treasure.id);
                 const isCollected = collectionRecords.length > 0;
                 const firstCollected = isCollected ? Math.min(...collectionRecords.map(r => r.dateCollected)) : null;
                 const collectionCount = collectionRecords.length;
                 
                 return {
-                    ...appliance,
+                    ...treasure,
                     isCollected,
                     firstCollectedDate: firstCollected,
                     collectionCount,
@@ -44,51 +42,55 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                 };
             });
 
-            setUserAppliances(userApplianceRecords);
-            setAllAppliances(appliancesWithCollection);
+            setUserTreasures(userTreasureRecords);
+            setAllTreasures(treasuresWithCollection);
+            
+            // 총 가치 계산
+            const totalTreasureValue = await database.getUserTreasureValue(user.id);
+            setTotalValue(totalTreasureValue);
 
         } catch (error) {
-            console.error('가전제품 데이터 로드 중 오류:', error);
+            console.error('보물 데이터 로드 중 오류:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const renderApplianceCard = (appliance) => {
+    const renderTreasureCard = (treasure) => {
         return React.createElement('div', {
-            key: `appliance-${appliance.id}`,
+            key: `treasure-${treasure.id}`,
             className: `iphone-list-item cursor-pointer transform transition-all ${
-                appliance.isCollected 
+                treasure.isCollected 
                     ? 'bg-white border-2 border-green-300 shadow-lg' 
                     : 'bg-gray-100 border-2 border-gray-200 opacity-60'
             }`,
-            onClick: () => appliance.isCollected && setSelectedAppliance(appliance)
+            onClick: () => treasure.isCollected && setSelectedTreasure(treasure)
         }, [
             React.createElement('div', {
                 key: 'card-content',
                 className: "flex items-center space-x-4"
             }, [
                 React.createElement('div', {
-                    key: 'appliance-icon',
-                    className: `text-6xl ${appliance.isCollected ? '' : 'grayscale'}`
-                }, appliance.emoji || '🏠'),
+                    key: 'treasure-icon',
+                    className: `text-6xl ${treasure.isCollected ? '' : 'grayscale'}`
+                }, treasure.icon || treasure.emoji || '💎'),
                 React.createElement('div', {
-                    key: 'appliance-info',
+                    key: 'treasure-info',
                     className: "flex-1 min-w-0"
                 }, [
                     React.createElement('h3', {
                         key: 'name',
                         className: `text-lg font-bold truncate ${
-                            appliance.isCollected ? 'text-gray-800' : 'text-gray-500'
+                            treasure.isCollected ? 'text-gray-800' : 'text-gray-500'
                         }`
-                    }, appliance.name),
+                    }, treasure.name),
                     React.createElement('p', {
                         key: 'brand',
                         className: `text-sm truncate ${
-                            appliance.isCollected ? 'text-gray-600' : 'text-gray-400'
+                            treasure.isCollected ? 'text-gray-600' : 'text-gray-400'
                         }`
-                    }, `${appliance.brand} - ${appliance.category}`),
-                    appliance.isCollected && React.createElement('div', {
+                    }, `${treasure.brand} - ${treasure.category}`),
+                    treasure.isCollected && React.createElement('div', {
                         key: 'collection-info',
                         className: "mt-2 space-y-1"
                     }, [
@@ -100,15 +102,15 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                                 key: 'check-icon',
                                 className: "mr-1"
                             }, '✅'),
-                            `${appliance.collectionCount}회 수집`
+                            `${treasure.collectionCount}회 수집`
                         ]),
-                        appliance.firstCollectedDate && React.createElement('div', {
+                        treasure.firstCollectedDate && React.createElement('div', {
                             key: 'first-collected',
                             className: "text-xs text-gray-500"
-                        }, `첫 수집: ${new Date(appliance.firstCollectedDate).toLocaleDateString('ko-KR')}`)
+                        }, `첫 수집: ${new Date(treasure.firstCollectedDate).toLocaleDateString('ko-KR')}`)
                     ])
                 ]),
-                !appliance.isCollected && React.createElement('div', {
+                !treasure.isCollected && React.createElement('div', {
                     key: 'lock-icon',
                     className: "text-3xl text-gray-400"
                 }, '🔒')
@@ -127,17 +129,17 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                 React.createElement('div', {
                     key: 'loading-spinner',
                     className: "text-6xl mb-4 animate-pulse"
-                }, '🏠'),
+                }, '💎'),
                 React.createElement('div', {
                     key: 'loading-text',
                     className: "text-xl text-gray-600"
-                }, '가전제품 컬렉션 로딩 중...')
+                }, '보물 컬렉션 로딩 중...')
             ])
         ]);
     }
 
-    const collectedCount = allAppliances.filter(a => a.isCollected).length;
-    const totalCount = allAppliances.length;
+    const collectedCount = allTreasures.filter(a => a.isCollected).length;
+    const totalCount = allTreasures.length;
     const collectionProgress = totalCount > 0 ? Math.round((collectedCount / totalCount) * 100) : 0;
 
     return React.createElement('div', {
@@ -154,15 +156,19 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                 React.createElement('div', {
                     key: 'header-icon',
                     className: "text-6xl mb-4"
-                }, '🏠'),
+                }, '💎'),
                 React.createElement('h2', {
                     key: 'header-title',
                     className: "text-3xl font-bold text-gray-800 mb-2"
-                }, `${user.name}님의 가전제품 컬렉션`),
+                }, `${user.name}님의 보물 컬렉션`),
                 React.createElement('div', {
                     key: 'progress-info',
                     className: "text-lg text-gray-600 mb-4"
                 }, `${collectedCount}/${totalCount} 수집 완료 (${collectionProgress}%)`),
+                totalValue > 0 && React.createElement('div', {
+                    key: 'total-value',
+                    className: "text-lg font-bold text-green-600 mb-2"
+                }, `💰 총 가치: ₩${totalValue.toLocaleString()}`),
                 React.createElement('div', {
                     key: 'progress-bar-container',
                     className: "progress-bar mb-4"
@@ -177,17 +183,17 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
         ]),
 
         React.createElement('div', {
-            key: 'appliances-grid',
+            key: 'treasures-grid',
             className: "space-y-2"
-        }, allAppliances.map(renderApplianceCard)),
+        }, allTreasures.map(renderTreasureCard)),
 
-        // 가전제품 상세정보 팝업
-        selectedAppliance && React.createElement('div', {
-            key: 'appliance-popup',
+        // 보물 상세정보 팝업
+        selectedTreasure && React.createElement('div', {
+            key: 'treasure-popup',
             className: "iphone-modal",
             onClick: (e) => {
                 if (e.target === e.currentTarget) {
-                    setSelectedAppliance(null);
+                    setSelectedTreasure(null);
                 }
             }
         }, [
@@ -202,37 +208,37 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                     React.createElement('h3', {
                         key: 'popup-title',
                         className: "text-2xl font-bold text-gray-800"
-                    }, selectedAppliance.name),
+                    }, selectedTreasure.name),
                     React.createElement('button', {
                         key: 'close-button',
-                        onClick: () => setSelectedAppliance(null),
+                        onClick: () => setSelectedTreasure(null),
                         className: "touch-button bg-gray-200 text-gray-600 border-0 text-sm px-3 py-1"
                     }, '✕')
                 ]),
                 
                 React.createElement('div', {
-                    key: 'appliance-details',
+                    key: 'treasure-details',
                     className: "space-y-4"
                 }, [
                     React.createElement('div', {
-                        key: 'appliance-main',
+                        key: 'treasure-main',
                         className: "text-center p-6 bg-gradient-to-r from-blue-50 to-indigo-100 rounded-lg border-2 border-blue-200"
                     }, [
                         React.createElement('div', {
                             key: 'large-icon',
                             className: "text-8xl mb-4"
-                        }, selectedAppliance.emoji || '🏠'),
+                        }, selectedTreasure.emoji || '🏠'),
                         React.createElement('div', {
                             key: 'brand-category',
                             className: "text-lg text-gray-600"
-                        }, `${selectedAppliance.brand} - ${selectedAppliance.category}`),
-                        selectedAppliance.releaseYear && React.createElement('div', {
+                        }, `${selectedTreasure.brand} - ${selectedTreasure.category}`),
+                        selectedTreasure.releaseYear && React.createElement('div', {
                             key: 'release-info',
                             className: "text-sm text-gray-500 mt-2"
-                        }, `${selectedAppliance.releaseYear}년 출시 | ${selectedAppliance.countryOfOrigin || '정보없음'}`)
+                        }, `${selectedTreasure.releaseYear}년 출시 | ${selectedTreasure.countryOfOrigin || '정보없음'}`)
                     ]),
 
-                    selectedAppliance.description && React.createElement('div', {
+                    selectedTreasure.description && React.createElement('div', {
                         key: 'description',
                         className: "p-4 bg-gray-50 rounded-lg"
                     }, [
@@ -243,8 +249,8 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                         React.createElement('p', {
                             key: 'desc-text',
                             className: "text-gray-700"
-                        }, selectedAppliance.description),
-                        selectedAppliance.specialFeature && React.createElement('div', {
+                        }, selectedTreasure.description),
+                        selectedTreasure.specialFeature && React.createElement('div', {
                             key: 'special-feature',
                             className: "mt-3 p-3 bg-yellow-50 rounded border-l-4 border-yellow-400"
                         }, [
@@ -255,11 +261,11 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                             React.createElement('p', {
                                 key: 'special-text',
                                 className: "text-yellow-700 text-sm"
-                            }, selectedAppliance.specialFeature)
+                            }, selectedTreasure.specialFeature)
                         ])
                     ]),
 
-                    selectedAppliance.specifications && React.createElement('div', {
+                    selectedTreasure.specifications && React.createElement('div', {
                         key: 'specifications',
                         className: "p-4 bg-blue-50 rounded-lg"
                     }, [
@@ -270,7 +276,7 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                         React.createElement('div', {
                             key: 'spec-grid',
                             className: "grid grid-cols-2 gap-2 text-sm"
-                        }, Object.entries(selectedAppliance.specifications).map(([key, value]) =>
+                        }, Object.entries(selectedTreasure.specifications).map(([key, value]) =>
                             React.createElement('div', {
                                 key: `spec-${key}`,
                                 className: "flex justify-between p-2 bg-white rounded"
@@ -287,7 +293,7 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                         ))
                     ]),
 
-                    selectedAppliance.priceNote && React.createElement('div', {
+                    selectedTreasure.priceNote && React.createElement('div', {
                         key: 'price-info',
                         className: "p-4 bg-green-50 rounded-lg text-center"
                     }, [
@@ -298,11 +304,15 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                         React.createElement('p', {
                             key: 'price-text',
                             className: "text-lg font-bold text-green-600"
-                        }, selectedAppliance.priceNote)
+                        }, selectedTreasure.priceNote),
+                        selectedTreasure.monetaryValue && React.createElement('p', {
+                            key: 'monetary-value',
+                            className: "text-md text-gray-600 mt-2"
+                        }, `실제 가치: ₩${selectedTreasure.monetaryValue.toLocaleString()}`)
                     ]),
                     
                     // 수집 히스토리 (수집한 상품인 경우만)
-                    selectedAppliance.isCollected && selectedAppliance.collectionHistory && React.createElement('div', {
+                    selectedTreasure.isCollected && selectedTreasure.collectionHistory && React.createElement('div', {
                         key: 'collection-history',
                         className: "p-4 bg-purple-50 rounded-lg"
                     }, [
@@ -314,12 +324,12 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
                                 key: 'history-icon',
                                 className: "mr-2"
                             }, '🏆'),
-                            `수집 기록 (총 ${selectedAppliance.collectionCount}회)`
+                            `수집 기록 (총 ${selectedTreasure.collectionCount}회)`
                         ]),
                         React.createElement('div', {
                             key: 'history-list',
                             className: "space-y-2 max-h-32 overflow-y-auto"
-                        }, selectedAppliance.collectionHistory
+                        }, selectedTreasure.collectionHistory
                             .sort((a, b) => b.dateCollected - a.dateCollected) // 최신순 정렬
                             .map((record, index) => 
                                 React.createElement('div', {
@@ -342,7 +352,7 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
 
                 React.createElement('button', {
                     key: 'close-bottom-button',
-                    onClick: () => setSelectedAppliance(null),
+                    onClick: () => setSelectedTreasure(null),
                     className: "touch-button w-full bg-blue-500 hover:bg-blue-600 text-white border-0 mt-6"
                 }, '확인')
             ])
@@ -363,5 +373,5 @@ function ApplianceCollectionPage({ database, user, onReturnHome }) {
 
 // 전역으로 내보내기
 if (typeof window !== 'undefined') {
-    window.ApplianceCollectionPage = ApplianceCollectionPage;
+    window.TreasureCollectionPage = TreasureCollectionPage;
 }

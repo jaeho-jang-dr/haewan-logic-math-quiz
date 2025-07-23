@@ -4,7 +4,7 @@ function CompleteAdminPage({ database, onReturnHome }) {
     const [users, setUsers] = useState([]);
     const [sessions, setSessions] = useState([]);
     const [questions, setQuestions] = useState([]);
-    const [appliances, setAppliances] = useState([]);
+    const [treasures, setTreasures] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [leaderboard, setLeaderboard] = useState(null);
@@ -96,9 +96,9 @@ function CompleteAdminPage({ database, onReturnHome }) {
             // 사용자 데이터
             setUsers(leaderboardSystem.players || []);
             
-            // 가전제품 데이터
-            if (typeof appliancesData !== 'undefined') {
-                setAppliances(appliancesData);
+            // 보물 데이터
+            if (typeof treasuresDatabase !== 'undefined') {
+                setTreasures(treasuresDatabase);
             }
             
             // 문제 데이터 통계 - 정확한 개수 계산 (기존 + 자연 테마)
@@ -377,21 +377,25 @@ function CompleteAdminPage({ database, onReturnHome }) {
                     ])
                 ]),
                 React.createElement('div', {
-                    key: 'appliances-stats',
+                    key: 'treasures-stats',
                     className: 'bg-white p-6 rounded-lg border'
                 }, [
                     React.createElement('h4', {
                         key: 'title',
                         className: 'text-xl font-bold mb-4 text-gray-800'
-                    }, '🏠 가전제품 DB'),
+                    }, '💎 보물 DB'),
                     React.createElement('div', {
                         key: 'total',
                         className: 'text-3xl font-bold text-center text-blue-600 mb-4'
-                    }, `${appliances.length}개`),
+                    }, `${treasures.length}개`),
                     React.createElement('div', {
                         key: 'categories',
                         className: 'text-sm text-gray-600 text-center'
-                    }, `${typeof applianceUtils !== 'undefined' ? applianceUtils.getAllCategories().length : 0}개 카테고리`)
+                    }, `${[...new Set(treasures.map(t => t.category))].length}개 카테고리`),
+                    React.createElement('div', {
+                        key: 'fan-info',
+                        className: 'text-sm font-medium text-cyan-600 text-center mt-2'
+                    }, `🌀 선풍기: ${treasures.filter(t => t.category === '선풍기').length}개`)
                 ])
             ]),
 
@@ -722,21 +726,18 @@ function CompleteAdminPage({ database, onReturnHome }) {
     };
 
     // 상품뱅크 렌더링
-    const renderApplianceBank = () => {
-        const getAllAppliances = () => {
-            let allAppliances = [];
+    const renderTreasureBank = () => {
+        const getAllTreasures = () => {
+            let allTreasures = [];
             
-            if (typeof appliancesData !== 'undefined') {
-                allAppliances = [...allAppliances, ...appliancesData.map(a => ({...a, source: 'basic'}))];
-            }
-            if (typeof enhancedAppliancesData !== 'undefined') {
-                allAppliances = [...allAppliances, ...enhancedAppliancesData.map(a => ({...a, source: 'enhanced'}))];
+            if (typeof treasuresDatabase !== 'undefined') {
+                allTreasures = [...treasuresDatabase];
             }
             
-            return allAppliances;
+            return allTreasures;
         };
 
-        const appliances = getAllAppliances();
+        const treasures = getAllTreasures();
         
         return React.createElement('div', {
             className: 'space-y-6'
@@ -744,10 +745,10 @@ function CompleteAdminPage({ database, onReturnHome }) {
             React.createElement('h3', {
                 key: 'title',
                 className: 'text-2xl font-bold text-gray-800'
-            }, '🏠 상품뱅크 관리'),
+            }, '💎 보물뱅크 관리'),
             
             React.createElement('div', {
-                key: 'appliance-stats',
+                key: 'treasure-stats',
                 className: 'grid grid-cols-2 md:grid-cols-4 gap-4 mb-6'
             }, [
                 React.createElement('div', {
@@ -757,55 +758,55 @@ function CompleteAdminPage({ database, onReturnHome }) {
                     React.createElement('div', {
                         key: 'number',
                         className: 'text-2xl font-bold text-purple-600'
-                    }, appliances.length),
+                    }, treasures.length),
                     React.createElement('div', {
                         key: 'label',
                         className: 'text-sm text-gray-600'
-                    }, '전체 상품')
+                    }, '전체 보물')
                 ]),
                 React.createElement('div', {
-                    key: 'basic-count',
+                    key: 'toy-count',
                     className: 'bg-blue-100 p-4 rounded-lg text-center'
                 }, [
                     React.createElement('div', {
                         key: 'number',
                         className: 'text-2xl font-bold text-blue-600'
-                    }, appliances.filter(a => a.source === 'basic').length),
+                    }, treasures.filter(t => t.category && (t.category.includes('장난감') || t.category.includes('toy'))).length),
                     React.createElement('div', {
                         key: 'label',
                         className: 'text-sm text-gray-600'
-                    }, '기본 상품')
+                    }, '장난감')
                 ]),
                 React.createElement('div', {
-                    key: 'enhanced-count',
+                    key: 'edu-count',
                     className: 'bg-green-100 p-4 rounded-lg text-center'
                 }, [
                     React.createElement('div', {
                         key: 'number',
                         className: 'text-2xl font-bold text-green-600'
-                    }, appliances.filter(a => a.source === 'enhanced').length),
+                    }, treasures.filter(t => t.category && t.category.includes('교육')).length),
                     React.createElement('div', {
                         key: 'label',
                         className: 'text-sm text-gray-600'
-                    }, '고급 상품')
+                    }, '교육용품')
                 ]),
                 React.createElement('div', {
-                    key: 'categories',
-                    className: 'bg-orange-100 p-4 rounded-lg text-center'
+                    key: 'fan-count',
+                    className: 'bg-cyan-100 p-4 rounded-lg text-center'
                 }, [
                     React.createElement('div', {
                         key: 'number',
-                        className: 'text-2xl font-bold text-orange-600'
-                    }, [...new Set(appliances.map(a => a.category))].length),
+                        className: 'text-2xl font-bold text-cyan-600'
+                    }, treasures.filter(t => t.category === '선풍기').length),
                     React.createElement('div', {
                         key: 'label',
                         className: 'text-sm text-gray-600'
-                    }, '카테고리')
+                    }, '🌀 선풍기')
                 ])
             ]),
             
             React.createElement('div', {
-                key: 'appliance-list',
+                key: 'treasure-list',
                 className: 'bg-white rounded-lg border overflow-hidden'
             }, [
                 React.createElement('div', {
@@ -817,43 +818,45 @@ function CompleteAdminPage({ database, onReturnHome }) {
                         className: 'grid grid-cols-7 gap-4 p-4 font-semibold text-sm text-gray-600'
                     }, [
                         React.createElement('div', { key: 'emoji' }, '아이콘'),
-                        React.createElement('div', { key: 'name' }, '상품명'),
+                        React.createElement('div', { key: 'name' }, '보물명'),
                         React.createElement('div', { key: 'brand' }, '브랜드'),
                         React.createElement('div', { key: 'category' }, '카테고리'),
                         React.createElement('div', { key: 'price' }, '가격'),
-                        React.createElement('div', { key: 'source' }, '출처'),
+                        React.createElement('div', { key: 'source' }, '등급'),
                         React.createElement('div', { key: 'actions' }, '관리')
                     ])
                 ]),
                 React.createElement('div', {
-                    key: 'appliance-rows',
+                    key: 'treasure-rows',
                     className: 'max-h-96 overflow-y-auto'
-                }, appliances.map((appliance, index) => 
+                }, treasures.map((treasure, index) => 
                     React.createElement('div', {
-                        key: `appliance-${appliance.id}-${index}`,
+                        key: `treasure-${treasure.id}-${index}`,
                         className: 'grid grid-cols-7 gap-4 p-4 border-b hover:bg-gray-50 text-sm'
                     }, [
                         React.createElement('div', { 
                             key: 'emoji',
                             className: 'text-2xl'
-                        }, appliance.emoji || '🏠'),
+                        }, treasure.icon || treasure.emoji || '💎'),
                         React.createElement('div', { 
                             key: 'name',
                             className: 'font-medium'
-                        }, appliance.name),
-                        React.createElement('div', { key: 'brand' }, appliance.brand),
-                        React.createElement('div', { key: 'category' }, appliance.category),
-                        React.createElement('div', { key: 'price' }, appliance.price ? `₩${appliance.price.toLocaleString()}` : '-'),
+                        }, treasure.name),
+                        React.createElement('div', { key: 'brand' }, treasure.brand),
+                        React.createElement('div', { key: 'category' }, treasure.category),
+                        React.createElement('div', { key: 'price' }, treasure.monetaryValue ? `₩${treasure.monetaryValue.toLocaleString()}` : '-'),
                         React.createElement('span', {
                             key: 'source',
                             className: `px-2 py-1 rounded text-xs ${
-                                appliance.source === 'enhanced' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+                                treasure.rarity === 5 ? 'bg-purple-100 text-purple-800' : 
+                                treasure.rarity >= 3 ? 'bg-blue-100 text-blue-800' : 
+                                'bg-gray-100 text-gray-800'
                             }`
-                        }, appliance.source === 'enhanced' ? '고급' : '기본'),
+                        }, treasure.rarity === 5 ? '전설' : treasure.rarity >= 3 ? '희귀' : '일반'),
                         React.createElement('button', {
                             key: 'view-button',
                             className: 'bg-purple-500 hover:bg-purple-600 text-white px-2 py-1 rounded text-xs',
-                            onClick: () => alert('상품 상세정보:\\n\\n' + JSON.stringify(appliance, null, 2))
+                            onClick: () => alert('보물 상세정보:\\n\\n' + JSON.stringify(treasure, null, 2))
                         }, '상세보기')
                     ])
                 ))
@@ -1123,14 +1126,14 @@ function CompleteAdminPage({ database, onReturnHome }) {
                     }`
                 }, '📚 문제은행'),
                 React.createElement('button', {
-                    key: 'appliances-tab',
-                    onClick: () => setActiveTab('appliances'),
+                    key: 'treasures-tab',
+                    onClick: () => setActiveTab('treasures'),
                     className: `px-6 py-4 font-semibold transition-colors ${
-                        activeTab === 'appliances' 
+                        activeTab === 'treasures' 
                             ? 'border-b-2 border-gray-600 text-gray-700 bg-white' 
                             : 'text-gray-600 hover:text-gray-800'
                     }`
-                }, '🏠 상품뱅크'),
+                }, '💎 보물뱅크'),
                 React.createElement('button', {
                     key: 'settings-tab',
                     onClick: () => setActiveTab('settings'),
@@ -1151,7 +1154,7 @@ function CompleteAdminPage({ database, onReturnHome }) {
             activeTab === 'dashboard' && renderDashboard(),
             activeTab === 'users' && renderUserManagement(),
             activeTab === 'questions' && renderQuestionBank(),
-            activeTab === 'appliances' && renderApplianceBank(),
+            activeTab === 'treasures' && renderTreasureBank(),
             activeTab === 'settings' && renderSystemSettings()
         ]),
 

@@ -49,11 +49,11 @@ class MathQuizDatabase {
                 }
                 
                 // 가전제품 수집 테이블
-                if (!db.objectStoreNames.contains('appliance_collection')) {
-                    const applianceStore = db.createObjectStore('appliance_collection', { keyPath: 'id', autoIncrement: true });
-                    applianceStore.createIndex('userId', 'userId', { unique: false });
-                    applianceStore.createIndex('applianceId', 'applianceId', { unique: false });
-                    applianceStore.createIndex('userId_applianceId', ['userId', 'applianceId'], { unique: true });
+                if (!db.objectStoreNames.contains('treasure_collection')) {
+                    const treasureStore = db.createObjectStore('treasure_collection', { keyPath: 'id', autoIncrement: true });
+                    treasureStore.createIndex('userId', 'userId', { unique: false });
+                    treasureStore.createIndex('treasureId', 'treasureId', { unique: false });
+                    treasureStore.createIndex('userId_treasureId', ['userId', 'treasureId'], { unique: true });
                 }
             };
         });
@@ -196,18 +196,19 @@ class MathQuizDatabase {
     }
 
     // 가전제품 수집 관련 메서드들
-    async addApplianceToUser(userId, applianceId) {
+    async addTreasureToUser(userId, treasureId) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['appliance_collection'], 'readwrite');
-            const store = transaction.objectStore('appliance_collection');
+            const transaction = this.db.transaction(['treasure_collection'], 'readwrite');
+            const store = transaction.objectStore('treasure_collection');
             
-            const applianceRecord = {
+            const treasureRecord = {
                 userId: userId,
-                applianceId: applianceId,
-                collectedAt: new Date().toISOString()
+                treasureId: treasureId,
+                collectedAt: new Date().toISOString(),
+                dateCollected: Date.now()  // 타임스탬프로도 저장
             };
             
-            const request = store.add(applianceRecord);
+            const request = store.add(treasureRecord);
             
             request.onsuccess = () => resolve(request.result);
             request.onerror = () => {
@@ -221,10 +222,10 @@ class MathQuizDatabase {
         });
     }
 
-    async getUserAppliances(userId) {
+    async getUserTreasures(userId) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['appliance_collection'], 'readonly');
-            const store = transaction.objectStore('appliance_collection');
+            const transaction = this.db.transaction(['treasure_collection'], 'readonly');
+            const store = transaction.objectStore('treasure_collection');
             const index = store.index('userId');
             
             const request = index.getAll(userId);
@@ -234,24 +235,74 @@ class MathQuizDatabase {
         });
     }
 
-    async getUserApplianceCount(userId) {
+    async getUserTreasureCount(userId) {
         return new Promise((resolve, reject) => {
-            this.getUserAppliances(userId).then(appliances => {
-                resolve(appliances.length);
+            this.getUserTreasures(userId).then(treasures => {
+                resolve(treasures.length);
             }).catch(reject);
         });
     }
 
-    async hasUserAppliance(userId, applianceId) {
+    async hasUserTreasure(userId, treasureId) {
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['appliance_collection'], 'readonly');
-            const store = transaction.objectStore('appliance_collection');
-            const index = store.index('userId_applianceId');
+            const transaction = this.db.transaction(['treasure_collection'], 'readonly');
+            const store = transaction.objectStore('treasure_collection');
+            const index = store.index('userId_treasureId');
             
-            const request = index.get([userId, applianceId]);
+            const request = index.get([userId, treasureId]);
             
             request.onsuccess = () => resolve(request.result !== undefined);
             request.onerror = () => reject(request.error);
+        });
+    }
+
+    // 사용자의 보물 총 가치 계산
+    async getUserTreasureValue(userId) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const userTreasures = await this.getUserTreasures(userId);
+                let totalValue = 0;
+                
+                if (typeof window.treasuresDatabase !== 'undefined') {
+                    userTreasures.forEach(record => {
+                        const treasure = window.treasuresDatabase.find(t => t.id === record.treasureId);
+                        if (treasure && treasure.monetaryValue) {
+                            totalValue += treasure.monetaryValue;
+                        }
+                    });
+                }
+                
+                resolve(totalValue);
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    // 사용자의 보물 상세 정보 가져오기
+    async getUserTreasureDetails(userId) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const userTreasures = await this.getUserTreasures(userId);
+                const treasureDetails = [];
+                
+                if (typeof window.treasuresDatabase !== 'undefined') {
+                    userTreasures.forEach(record => {
+                        const treasure = window.treasuresDatabase.find(t => t.id === record.treasureId);
+                        if (treasure) {
+                            treasureDetails.push({
+                                ...treasure,
+                                collectedAt: record.collectedAt,
+                                dateCollected: record.dateCollected
+                            });
+                        }
+                    });
+                }
+                
+                resolve(treasureDetails);
+            } catch (error) {
+                reject(error);
+            }
         });
     }
 }
