@@ -5,6 +5,8 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('rankings'); // rankings, statistics, weekly
     const [leaderboard, setLeaderboard] = useState(null);
+    const [selectedPlayer, setSelectedPlayer] = useState(null);
+    const [playerTreasures, setPlayerTreasures] = useState([]);
 
     useEffect(() => {
         initializeScoreboard();
@@ -157,6 +159,30 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
             day: 'numeric'
         });
     };
+    
+    const handlePlayerClick = async (player) => {
+        if (!player.isRealPlayer || !database) return;
+        
+        setSelectedPlayer(player);
+        
+        // 플레이어의 보물 정보 가져오기
+        try {
+            const treasures = await database.getUserTreasures(player.userId || player.id);
+            const treasureDetails = treasures.map(t => {
+                const treasureData = window.treasuresDatabase?.find(td => td.id === t.treasureId) ||
+                                   window.fansDatabase?.find(fd => fd.id === t.treasureId);
+                return {
+                    ...t,
+                    details: treasureData
+                };
+            }).filter(t => t.details);
+            
+            setPlayerTreasures(treasureDetails);
+        } catch (error) {
+            console.error('보물 정보 가져오기 실패:', error);
+            setPlayerTreasures([]);
+        }
+    };
 
     if (loading) {
         return React.createElement('div', {
@@ -252,7 +278,10 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
             }, players.map((player, index) => 
                 React.createElement('div', {
                     key: `rank-${player.id}`,
+                    onClick: () => handlePlayerClick(player),
                     className: `flex items-center justify-between p-4 rounded-lg border transition-all hover:shadow-md ${
+                        player.isRealPlayer ? 'cursor-pointer' : ''
+                    } ${
                         index < 3 ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200' :
                         index < 10 ? 'bg-blue-50 border-blue-200' :
                         'bg-gray-50 border-gray-200'
@@ -337,7 +366,7 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                             key: 'details-right',
                             className: 'text-sm text-gray-500 flex items-center justify-end space-x-2'
                         }, [
-                            React.createElement('span', {
+                            player.averageScore !== undefined && React.createElement('span', {
                                 key: 'average'
                             }, `평균 ${player.averageScore}점`),
                             getRankChangeIcon(player.rankChange || 0)
@@ -591,6 +620,109 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
             ])
         ]);
     };
+    
+    // 플레이어 상세 정보 모달
+    const renderPlayerModal = () => {
+        if (!selectedPlayer) return null;
+        
+        return React.createElement('div', {
+            key: 'player-modal',
+            className: 'fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4',
+            onClick: (e) => {
+                if (e.target === e.currentTarget) {
+                    setSelectedPlayer(null);
+                    setPlayerTreasures([]);
+                }
+            }
+        }, [
+            React.createElement('div', {
+                key: 'modal-content',
+                className: 'bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto'
+            }, [
+                React.createElement('div', {
+                    key: 'header',
+                    className: 'flex justify-between items-center mb-6'
+                }, [
+                    React.createElement('h3', {
+                        key: 'title',
+                        className: 'text-2xl font-bold text-gray-800'
+                    }, '🏆 플레이어 상세 정보'),
+                    React.createElement('button', {
+                        key: 'close',
+                        onClick: () => {
+                            setSelectedPlayer(null);
+                            setPlayerTreasures([]);
+                        },
+                        className: 'text-gray-500 hover:text-gray-700 text-2xl'
+                    }, '×')
+                ]),
+                
+                // 플레이어 기본 정보
+                React.createElement('div', {
+                    key: 'player-info',
+                    className: 'bg-gray-50 p-4 rounded-lg mb-6'
+                }, [
+                    React.createElement('div', {
+                        key: 'avatar-name',
+                        className: 'flex items-center space-x-4 mb-4'
+                    }, [
+                        React.createElement('div', {
+                            key: 'avatar',
+                            className: 'text-5xl'
+                        }, selectedPlayer.avatar || '👤'),
+                        React.createElement('div', {
+                            key: 'name-info'
+                        }, [
+                            React.createElement('h4', {
+                                key: 'name',
+                                className: 'text-xl font-bold'
+                            }, selectedPlayer.name),
+                            React.createElement('p', {
+                                key: 'details',
+                                className: 'text-gray-600'
+                            }, `${selectedPlayer.education || selectedPlayer.grade || '학생'} • 총 점수: ${selectedPlayer.totalScore}점`)
+                        ])
+                    ])
+                ]),
+                
+                // 보물 컬렉션
+                React.createElement('div', {
+                    key: 'treasures-section'
+                }, [
+                    React.createElement('h4', {
+                        key: 'title',
+                        className: 'text-lg font-bold mb-4'
+                    }, `💎 보물 컬렉션 (${playerTreasures.length}개)`),
+                    
+                    playerTreasures.length > 0 ? React.createElement('div', {
+                        key: 'treasures-grid',
+                        className: 'grid grid-cols-2 md:grid-cols-3 gap-4'
+                    }, playerTreasures.map((treasure, index) => 
+                        React.createElement('div', {
+                            key: `treasure-${index}`,
+                            className: 'bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200'
+                        }, [
+                            React.createElement('div', {
+                                key: 'emoji',
+                                className: 'text-3xl mb-2 text-center'
+                            }, treasure.details?.emoji || '🎁'),
+                            React.createElement('div', {
+                                key: 'name',
+                                className: 'font-medium text-sm text-center'
+                            }, treasure.details?.name || '보물'),
+                            React.createElement('div', {
+                                key: 'date',
+                                className: 'text-xs text-gray-500 text-center mt-1'
+                            }, new Date(treasure.collectedAt).toLocaleDateString('ko-KR'))
+                        ])
+                    )) : React.createElement('p', {
+                        key: 'no-treasures',
+                        className: 'text-gray-500 text-center py-8'
+                    }, '아직 획득한 보물이 없습니다.')
+                ])
+            ])
+        ]);
+    };
 
     return React.createElement('div', {
         className: 'max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden'
@@ -678,7 +810,10 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                 onClick: onReturnHome,
                 className: 'bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-semibold transition-colors'
             }, '🏠 홈으로 돌아가기')
-        ])
+        ]),
+        
+        // 플레이어 상세 정보 모달
+        renderPlayerModal()
     ]);
 }
 
