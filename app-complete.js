@@ -1318,27 +1318,34 @@ function App() {
             // 3문제 전부 정답인 경우에만 보물 지급
             if (newCorrectCount === 3 && !sessionTreasureAwarded) {
                 console.log('🎉 3문제 전부 정답! 보물 지급!');
-                // 빵파레 효과와 함께 보물 지급
-                const awardedTreasure = await awardRandomTreasure(true);
                 setSessionTreasureAwarded(true);
                 
-                // 빵파레 효과 시작
-                if (awardedTreasure) {
-                    setShowFanfare(true);
-                    setFanfareTreasure(awardedTreasure);
+                // 빵파레 효과와 함께 보물 지급
+                awardRandomTreasure(true).then(awardedTreasure => {
+                    console.log('보물 지급 완료:', awardedTreasure);
                     
-                    // 5초 후 빵파레 효과 종료
-                    setTimeout(() => {
-                        setShowFanfare(false);
-                        setFanfareTreasure(null);
-                    }, 5000);
-                }
+                    // 빵파레 효과 시작
+                    if (awardedTreasure) {
+                        setShowFanfare(true);
+                        setFanfareTreasure(awardedTreasure);
+                        
+                        // 5초 후 빵파레 효과 종료
+                        setTimeout(() => {
+                            setShowFanfare(false);
+                            setFanfareTreasure(null);
+                        }, 5000);
+                    }
+                }).catch(error => {
+                    console.error('보물 지급 중 오류:', error);
+                });
             } else {
                 console.log(`정답 수가 부족합니다: ${newCorrectCount}/3`);
             }
             
             // 게임 종료
-            endGame();
+            setTimeout(() => {
+                endGame();
+            }, 100);
         }
     };
     

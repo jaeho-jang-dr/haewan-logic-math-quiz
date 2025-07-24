@@ -141,19 +141,37 @@ class MathQuizDatabase {
     }
 
     async addScore(sessionId, score, details) {
-        return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction(['scores'], 'readwrite');
-            const store = transaction.objectStore('scores');
-            const scoreRecord = {
-                sessionId,
-                totalScore: score,
-                details,
-                completedAt: new Date().toISOString()
-            };
-            const request = store.add(scoreRecord);
-            
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
+        return new Promise(async (resolve, reject) => {
+            try {
+                // 세션에서 userId 가져오기
+                const transaction = this.db.transaction(['sessions', 'scores'], 'readwrite');
+                const sessionStore = transaction.objectStore('sessions');
+                const scoreStore = transaction.objectStore('scores');
+                
+                const sessionRequest = sessionStore.get(sessionId);
+                sessionRequest.onsuccess = () => {
+                    const session = sessionRequest.result;
+                    if (!session) {
+                        reject(new Error('Session not found'));
+                        return;
+                    }
+                    
+                    const scoreRecord = {
+                        sessionId,
+                        userId: session.userId,
+                        totalScore: score,
+                        details,
+                        completedAt: new Date().toISOString()
+                    };
+                    
+                    const scoreRequest = scoreStore.add(scoreRecord);
+                    scoreRequest.onsuccess = () => resolve(scoreRequest.result);
+                    scoreRequest.onerror = () => reject(scoreRequest.error);
+                };
+                sessionRequest.onerror = () => reject(sessionRequest.error);
+            } catch (error) {
+                reject(error);
+            }
         });
     }
 
@@ -170,21 +188,41 @@ class MathQuizDatabase {
                 const enrichedScores = [];
                 
                 for (const score of scores) {
-                    const session = await new Promise((res) => {
-                        const req = sessionStore.get(score.sessionId);
+                    // userId가 직접 저장되어 있으면 사용, 아니면 세션에서 가져오기
+                    let userId = score.userId;
+                    let session = null;
+                    
+                    if (!userId) {
+                        session = await new Promise((res) => {
+                            const req = sessionStore.get(score.sessionId);
+                            req.onsuccess = () => res(req.result);
+                        });
+                        userId = session?.userId;
+                    }
+                    
+                    if (!userId) continue; // userId가 없으면 건너뛰기
+                    
+                    const user = await new Promise((res) => {
+                        const req = userStore.get(userId);
                         req.onsuccess = () => res(req.result);
                     });
                     
-                    const user = await new Promise((res) => {
-                        const req = userStore.get(session.userId);
-                        req.onsuccess = () => res(req.result);
-                    });
+                    if (!user) continue; // 사용자 정보가 없으면 건너뛰기
+                    
+                    // 세션 정보가 필요한 경우 가져오기
+                    if (!session) {
+                        session = await new Promise((res) => {
+                            const req = sessionStore.get(score.sessionId);
+                            req.onsuccess = () => res(req.result);
+                        });
+                    }
                     
                     enrichedScores.push({
                         ...score,
+                        userId: userId,
                         userName: user.name,
                         education: user.education,
-                        difficulty: session.difficulty
+                        difficulty: session?.difficulty || 'easy'
                     });
                 }
                 

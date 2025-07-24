@@ -67,20 +67,32 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
             const realPlayerCount = combinedPlayers.length;
             
             if (realPlayerCount < 25) {
-                // 실제 플레이어보다 낮은 점수의 가상 플레이어만 추가
-                const lowestRealScore = realPlayerCount > 0 ? combinedPlayers[realPlayerCount - 1].totalScore : Infinity;
-                const filteredVirtualPlayers = virtualPlayers
-                    .filter(vp => vp.totalScore < lowestRealScore)
-                    .slice(0, 25 - realPlayerCount);
-                    
-                filteredVirtualPlayers.forEach((vp, index) => {
-                    combinedPlayers.push({
-                        ...vp,
-                        rank: realPlayerCount + index + 1,
-                        medal: leaderboardSystem.getMedal(realPlayerCount + index + 1),
-                        isRealPlayer: false
+                if (realPlayerCount === 0) {
+                    // 실제 플레이어가 없는 경우 모든 가상 플레이어 표시
+                    virtualPlayers.slice(0, 25).forEach((vp, index) => {
+                        combinedPlayers.push({
+                            ...vp,
+                            rank: index + 1,
+                            medal: leaderboardSystem.getMedal(index + 1),
+                            isRealPlayer: false
+                        });
                     });
-                });
+                } else {
+                    // 실제 플레이어가 있는 경우, 그보다 낮은 점수의 가상 플레이어만 추가
+                    const lowestRealScore = combinedPlayers[realPlayerCount - 1].totalScore;
+                    const filteredVirtualPlayers = virtualPlayers
+                        .filter(vp => vp.totalScore < lowestRealScore)
+                        .slice(0, 25 - realPlayerCount);
+                        
+                    filteredVirtualPlayers.forEach((vp, index) => {
+                        combinedPlayers.push({
+                            ...vp,
+                            rank: realPlayerCount + index + 1,
+                            medal: leaderboardSystem.getMedal(realPlayerCount + index + 1),
+                            isRealPlayer: false
+                        });
+                    });
+                }
             }
             
             setPlayers(combinedPlayers);
