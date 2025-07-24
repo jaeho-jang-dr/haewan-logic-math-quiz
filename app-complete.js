@@ -960,6 +960,12 @@ function App() {
     const [showFanfare, setShowFanfare] = useState(false); // 빵파레 효과 표시 여부
     const [fanfareTreasure, setFanfareTreasure] = useState(null); // 빵파레에서 표시할 보물
     
+    // 디버그용 테스트 함수들을 window에 노출
+    useEffect(() => {
+        window.testSetShowFanfare = setShowFanfare;
+        window.testSetFanfareTreasure = setFanfareTreasure;
+    }, []);
+    
     useEffect(() => {
         initializeApp();
     }, []);
@@ -1363,6 +1369,7 @@ function App() {
         if (!database || !gameSession) return;
         
         try {
+            console.log('게임 종료 - 세션 업데이트 중...');
             await database.updateSession(gameSession.id, {
                 status: 'completed',
                 endTime: new Date().toISOString(),
@@ -1370,13 +1377,19 @@ function App() {
                 totalQuestions: questions.length * 3
             });
             
+            console.log(`게임 종료 - 점수 저장 중... (점수: ${score})`);
             await database.addScore(gameSession.id, score, {
                 answers,
                 completedAt: Date.now(),
                 difficulty: gameSession.difficulty
             });
             
-            setCurrentPage('result');
+            console.log('게임 종료 - 점수 저장 완료!');
+            
+            // 리더보드가 업데이트될 시간을 주기 위해 잠시 대기
+            setTimeout(() => {
+                setCurrentPage('result');
+            }, 500);
         } catch (error) {
             console.error('게임 종료 중 오류:', error);
             setCurrentPage('result'); // 에러가 있어도 결과 화면으로

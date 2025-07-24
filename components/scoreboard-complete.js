@@ -86,7 +86,15 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                             ...vp,
                             rank: index + 1,
                             medal: leaderboardSystem.getMedal(index + 1),
-                            isRealPlayer: false
+                            isRealPlayer: false,
+                            // 누락된 필드 보장
+                            avatar: vp.avatar || '👤',
+                            grade: vp.grade || '초등학생',
+                            school: vp.school || '학교',
+                            level: vp.level || '초급',
+                            gamesPlayed: vp.gamesPlayed || 0,
+                            treasureCount: 0,
+                            treasureValue: 0
                         });
                     });
                 } else {
@@ -104,7 +112,15 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                             ...vp,
                             rank: realPlayerCount + index + 1,
                             medal: leaderboardSystem.getMedal(realPlayerCount + index + 1),
-                            isRealPlayer: false
+                            isRealPlayer: false,
+                            // 누락된 필드 보장
+                            avatar: vp.avatar || '👤',
+                            grade: vp.grade || '초등학생',
+                            school: vp.school || '학교',
+                            level: vp.level || '초급',
+                            gamesPlayed: vp.gamesPlayed || 0,
+                            treasureCount: 0,
+                            treasureValue: 0
                         });
                     });
                 }

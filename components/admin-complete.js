@@ -10,6 +10,10 @@ function CompleteAdminPage({ database, onReturnHome }) {
     const [leaderboard, setLeaderboard] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+    const [adminPassword, setAdminPassword] = useState('1234'); // 관리자 비밀번호
+    const [showPasswordChange, setShowPasswordChange] = useState(false);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -19,12 +23,35 @@ function CompleteAdminPage({ database, onReturnHome }) {
 
     const handleLogin = (e) => {
         e.preventDefault();
-        if (loginForm.username === 'admin' && loginForm.password === '1234') {
+        if (loginForm.username === 'admin' && loginForm.password === adminPassword) {
             setIsAuthenticated(true);
         } else {
             alert('잘못된 아이디 또는 비밀번호입니다.');
             setLoginForm({ username: '', password: '' });
         }
+    };
+    
+    const handlePasswordChange = () => {
+        if (!newPassword || !confirmPassword) {
+            alert('새 비밀번호를 입력해주세요.');
+            return;
+        }
+        
+        if (newPassword !== confirmPassword) {
+            alert('비밀번호가 일치하지 않습니다.');
+            return;
+        }
+        
+        if (newPassword.length < 4) {
+            alert('비밀번호는 최소 4자 이상이어야 합니다.');
+            return;
+        }
+        
+        setAdminPassword(newPassword);
+        setShowPasswordChange(false);
+        setNewPassword('');
+        setConfirmPassword('');
+        alert('비밀번호가 성공적으로 변경되었습니다.');
     };
 
     const loadAdminData = async () => {
@@ -448,6 +475,66 @@ function CompleteAdminPage({ database, onReturnHome }) {
                             className: 'text-green-600 font-bold'
                         }, leaderboard ? '✅ 활성' : '❌ 비활성')
                     ])
+                ])
+            ]),
+            
+            // 관리자 설정 섹션
+            React.createElement('div', {
+                key: 'admin-settings',
+                className: 'bg-yellow-50 p-6 rounded-lg border border-yellow-200'
+            }, [
+                React.createElement('h4', {
+                    key: 'title',
+                    className: 'text-xl font-bold mb-4 text-gray-800'
+                }, '🔐 관리자 설정'),
+                React.createElement('div', {
+                    key: 'settings-content',
+                    className: 'space-y-4'
+                }, [
+                    React.createElement('div', {
+                        key: 'password-section',
+                        className: 'flex items-center justify-between'
+                    }, [
+                        React.createElement('span', {
+                            key: 'label',
+                            className: 'font-medium'
+                        }, '관리자 비밀번호'),
+                        React.createElement('button', {
+                            key: 'change-btn',
+                            onClick: () => setShowPasswordChange(!showPasswordChange),
+                            className: 'touch-button bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 text-sm'
+                        }, showPasswordChange ? '취소' : '변경하기')
+                    ]),
+                    showPasswordChange && React.createElement('div', {
+                        key: 'password-form',
+                        className: 'bg-white p-4 rounded-lg border space-y-3'
+                    }, [
+                        React.createElement('input', {
+                            key: 'new-password',
+                            type: 'password',
+                            value: newPassword,
+                            onChange: (e) => setNewPassword(e.target.value),
+                            placeholder: '새 비밀번호',
+                            className: 'touch-input w-full'
+                        }),
+                        React.createElement('input', {
+                            key: 'confirm-password',
+                            type: 'password',
+                            value: confirmPassword,
+                            onChange: (e) => setConfirmPassword(e.target.value),
+                            placeholder: '비밀번호 확인',
+                            className: 'touch-input w-full'
+                        }),
+                        React.createElement('button', {
+                            key: 'submit-btn',
+                            onClick: handlePasswordChange,
+                            className: 'touch-button w-full bg-green-500 hover:bg-green-600 text-white'
+                        }, '비밀번호 변경')
+                    ]),
+                    React.createElement('div', {
+                        key: 'info',
+                        className: 'text-sm text-gray-600 mt-2'
+                    }, '현재 비밀번호: ' + (showPasswordChange ? '****' : adminPassword))
                 ])
             ])
         ]);
