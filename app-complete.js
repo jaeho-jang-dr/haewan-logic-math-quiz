@@ -1326,26 +1326,36 @@ function App() {
                     
                     // 빵파레 효과 시작
                     if (awardedTreasure) {
+                        console.log('팡파레 효과 시작!');
                         setShowFanfare(true);
                         setFanfareTreasure(awardedTreasure);
+                        console.log('showFanfare 상태:', true);
+                        console.log('fanfareTreasure 상태:', awardedTreasure);
+                        
+                        // 3초 후 게임 종료 (팡파레 효과를 볼 시간 제공)
+                        setTimeout(() => {
+                            endGame();
+                        }, 3000);
                         
                         // 5초 후 빵파레 효과 종료
                         setTimeout(() => {
+                            console.log('팡파레 효과 종료');
                             setShowFanfare(false);
                             setFanfareTreasure(null);
                         }, 5000);
+                    } else {
+                        console.log('보물이 없어서 팡파레를 표시하지 않습니다.');
+                        endGame();
                     }
                 }).catch(error => {
                     console.error('보물 지급 중 오류:', error);
+                    endGame();
                 });
             } else {
                 console.log(`정답 수가 부족합니다: ${newCorrectCount}/3`);
-            }
-            
-            // 게임 종료
-            setTimeout(() => {
+                // 보물을 받지 못한 경우 바로 게임 종료
                 endGame();
-            }, 100);
+            }
         }
     };
     

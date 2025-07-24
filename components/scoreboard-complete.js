@@ -13,15 +13,22 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
     const initializeScoreboard = async () => {
         try {
             // 리더보드 시스템 초기화
-            const leaderboardSystem = new LeaderboardSystem();
+            if (typeof window.LeaderboardSystem === 'undefined') {
+                console.error('LeaderboardSystem이 정의되지 않았습니다!');
+                return;
+            }
+            const leaderboardSystem = new window.LeaderboardSystem();
             setLeaderboard(leaderboardSystem);
 
             // 실제 데이터베이스에서 점수 가져오기
+            let scoresWithTreasures = [];
+            
             if (database) {
                 const topScores = await database.getTopScores(25);
+                console.log('데이터베이스에서 가져온 점수:', topScores);
                 
                 // 각 플레이어의 보물 정보 추가
-                const scoresWithTreasures = await Promise.all(topScores.map(async (score) => {
+                scoresWithTreasures = await Promise.all(topScores.map(async (score) => {
                     try {
                         const treasureCount = await database.getUserTreasureCount(score.userId);
                         const treasureValue = await database.getUserTreasureValue(score.userId);
@@ -39,6 +46,7 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                     }
                 }));
                 
+                console.log('보물 정보 추가된 점수:', scoresWithTreasures);
                 setScores(scoresWithTreasures);
             }
 
@@ -66,9 +74,13 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
             const virtualPlayers = leaderboardSystem.getRankings();
             const realPlayerCount = combinedPlayers.length;
             
+            console.log('가상 플레이어 목록:', virtualPlayers);
+            console.log('실제 플레이어 수:', realPlayerCount);
+            
             if (realPlayerCount < 25) {
                 if (realPlayerCount === 0) {
                     // 실제 플레이어가 없는 경우 모든 가상 플레이어 표시
+                    console.log('실제 플레이어가 없으므로 가상 플레이어 표시');
                     virtualPlayers.slice(0, 25).forEach((vp, index) => {
                         combinedPlayers.push({
                             ...vp,
@@ -83,6 +95,9 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                     const filteredVirtualPlayers = virtualPlayers
                         .filter(vp => vp.totalScore < lowestRealScore)
                         .slice(0, 25 - realPlayerCount);
+                    
+                    console.log('가장 낮은 실제 점수:', lowestRealScore);
+                    console.log('필터링된 가상 플레이어:', filteredVirtualPlayers);
                         
                     filteredVirtualPlayers.forEach((vp, index) => {
                         combinedPlayers.push({
@@ -95,6 +110,7 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                 }
             }
             
+            console.log('최종 병합된 플레이어 목록:', combinedPlayers);
             setPlayers(combinedPlayers);
 
         } catch (error) {
