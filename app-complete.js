@@ -1207,6 +1207,15 @@ function App() {
             setScore(0);
             setAnswers([]);
             setSkipUsed(false); // 건너뛰기 초기화
+            
+            // 세션 관련 상태 초기화 - 버그 수정
+            setSessionCompletedQuestions(0);
+            setSessionCorrectQuestions(0);
+            setCurrentQuestionCorrect(false);
+            setSessionTreasureAwarded(false);
+            setShowFanfare(false);
+            setFanfareTreasure(null);
+            
             setCurrentPage('game');
             
             console.log('게임 시작 완료');
@@ -1264,6 +1273,9 @@ function App() {
             setScore(prev => prev + baseScore);
             setTotalScore(prev => prev + baseScore); // 누적 점수에도 추가
             setCurrentQuestionCorrect(true); // 현재 문제에서 정답 맞춤
+            console.log(`✅ 정답! 현재 문제 정답 상태: true`);
+        } else {
+            console.log(`❌ 오답! 현재 문제 정답 상태: ${currentQuestionCorrect}`);
         }
         
         // 다음 단계 또는 다음 문제로 이동

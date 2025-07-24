@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>논리수학 퀴즈 - 디버그 테스트</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+        }
+        
+        .debug-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 9999;
+        }
+        
+        .debug-log {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .touch-button {
+            min-height: 44px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            touch-action: manipulation;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        
+        .animate-bounceIn {
+            animation: bounceIn 0.6s ease-out;
+        }
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .animate-ping {
+            animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+        @keyframes ping {
+            75%, 100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <div id="debug-panel" class="debug-panel">
+        <h3 style="margin: 0 0 10px 0;">🐛 Debug Panel</h3>
+        <div id="debug-logs"></div>
+    </div>
+    
+    <!-- 데이터베이스 -->
+    <script src="js/database.js"></script>
+    
+    <!-- 테스트용 간단한 문제 데이터 -->
+    <script>
+        window.easyQuestions = [
+            {
+                id: 'test1',
+                question: '테스트 문제 1',
+                steps: [
+                    { step: '단계 1', correct: 'A', options: ['A', 'B', 'C', 'D'] },
+                    { step: '단계 2', correct: 'B', options: ['A', 'B', 'C', 'D'] },
+                    { step: '단계 3', correct: 'C', options: ['A', 'B', 'C', 'D'] }
+                ]
+            },
+            {
+                id: 'test2',
+                question: '테스트 문제 2',
+                steps: [
+                    { step: '단계 1', correct: 'D', options: ['A', 'B', 'C', 'D'] },
+                    { step: '단계 2', correct: 'A', options: ['A', 'B', 'C', 'D'] },
+                    { step: '단계 3', correct: 'B', options: ['A', 'B', 'C', 'D'] }
+                ]
+            },
+            {
+                id: 'test3',
+                question: '테스트 문제 3',
+                steps: [
+                    { step: '단계 1', correct: 'C', options: ['A', 'B', 'C', 'D'] },
+                    { step: '단계 2', correct: 'D', options: ['A', 'B', 'C', 'D'] },
+                    { step: '단계 3', correct: 'A', options: ['A', 'B', 'C', 'D'] }
+                ]
+            }
+        ];
+        
+        window.treasuresDatabase = [
+            { id: 'treasure1', name: '보물 1', emoji: '💎', brand: '브랜드A', category: '카테고리1' },
+            { id: 'treasure2', name: '보물 2', emoji: '🏆', brand: '브랜드B', category: '카테고리2' },
+            { id: 'treasure3', name: '보물 3', emoji: '🎁', brand: '브랜드C', category: '카테고리3' }
+        ];
+        
+        // 디버그 로그 함수
+        window.debugLog = function(message) {
+            const logs = document.getElementById('debug-logs');
+            const log = document.createElement('div');
+            log.className = 'debug-log';
+            log.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(log);
+            logs.scrollTop = logs.scrollHeight;
+        };
+        
+        // console.log 오버라이드
+        const originalLog = console.log;
+        console.log = function(...args) {
+            originalLog(...args);
+            window.debugLog(args.join(' '));
+        };
+    </script>
+    
+    <!-- 플레이어 데이터 -->
+    <script src="data/players/players-db.js?v=4"></script>
+    
+    <!-- 스코어보드 컴포넌트 -->
+    <script src="components/scoreboard-complete.js?v=6"></script>
+    
+    <!-- 보물 컬렉션 컴포넌트 -->
+    <script src="components/treasure-collection.js?v=2"></script>
+    
+    <!-- 메인 애플리케이션 -->
+    <script src="app-complete.js?v=6"></script>
+</body>
+</html>

@@ -42,9 +42,48 @@ function CompleteScoreboardPage({ database, onReturnHome }) {
                 setScores(scoresWithTreasures);
             }
 
-            // 가상의 플레이어 데이터와 실제 데이터 병합
-            const rankings = leaderboardSystem.getRankings();
-            setPlayers(rankings);
+            // 실제 데이터와 가상의 플레이어 데이터 병합
+            const combinedPlayers = [];
+            
+            // 실제 데이터베이스의 점수를 먼저 추가
+            if (scoresWithTreasures.length > 0) {
+                scoresWithTreasures.forEach((score, index) => {
+                    combinedPlayers.push({
+                        id: score.userId,
+                        name: score.userName || '익명',
+                        totalScore: score.totalScore,
+                        rank: index + 1,
+                        medal: leaderboardSystem.getMedal(index + 1),
+                        education: score.education || 'unknown',
+                        treasureCount: score.treasureCount || 0,
+                        treasureValue: score.treasureValue || 0,
+                        isRealPlayer: true
+                    });
+                });
+            }
+            
+            // 가상 플레이어 추가 (실제 플레이어 수가 부족한 경우)
+            const virtualPlayers = leaderboardSystem.getRankings();
+            const realPlayerCount = combinedPlayers.length;
+            
+            if (realPlayerCount < 25) {
+                // 실제 플레이어보다 낮은 점수의 가상 플레이어만 추가
+                const lowestRealScore = realPlayerCount > 0 ? combinedPlayers[realPlayerCount - 1].totalScore : Infinity;
+                const filteredVirtualPlayers = virtualPlayers
+                    .filter(vp => vp.totalScore < lowestRealScore)
+                    .slice(0, 25 - realPlayerCount);
+                    
+                filteredVirtualPlayers.forEach((vp, index) => {
+                    combinedPlayers.push({
+                        ...vp,
+                        rank: realPlayerCount + index + 1,
+                        medal: leaderboardSystem.getMedal(realPlayerCount + index + 1),
+                        isRealPlayer: false
+                    });
+                });
+            }
+            
+            setPlayers(combinedPlayers);
 
         } catch (error) {
             console.error('스코어보드 초기화 중 오류:', error);
